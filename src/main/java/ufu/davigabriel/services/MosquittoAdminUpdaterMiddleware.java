@@ -10,9 +10,9 @@ import ufu.davigabriel.server.Product;
 import java.util.Arrays;
 
 
-public class MosquittoAdminUpdaterMiddleware extends MosquittoUpdaterMiddleware implements IAdminProxyDatabase {
+public class MosquittoAdminUpdaterMiddleware extends MosquittoUpdaterMiddleware implements IClientProxyDatabase {
     private static MosquittoAdminUpdaterMiddleware instance;
-    final private AdminCacheService adminCacheService = AdminCacheService.getInstance();
+    final private ClientCacheService clientCacheService = ClientCacheService.getInstance();
     
     public MosquittoAdminUpdaterMiddleware(){
         super();
@@ -50,42 +50,42 @@ public class MosquittoAdminUpdaterMiddleware extends MosquittoUpdaterMiddleware 
     }
     @Override
     public void createClient(Client client) throws DuplicatePortalItemException, Exception {
-        if (adminCacheService.hasClient(client.getCID()))
+        if (clientCacheService.hasClient(client.getCID()))
             throw new DuplicatePortalItemException();
         publishClientChange(client, MosquittoTopics.CLIENT_CREATION_TOPIC);
     }
 
     @Override
     public void updateClient(Client client) throws NotFoundItemInPortalException, Exception {
-        if (!adminCacheService.hasClient(client.getCID()))
+        if (!clientCacheService.hasClient(client.getCID()))
             throw new NotFoundItemInPortalException();
         publishClientChange(client, MosquittoTopics.CLIENT_UPDATE_TOPIC);
     }
 
     @Override
     public void deleteClient(ID id) throws NotFoundItemInPortalException, Exception {
-        if (!adminCacheService.hasClient(id.getID()))
+        if (!clientCacheService.hasClient(id.getID()))
             throw new NotFoundItemInPortalException();
         publishClientDeletion(id);
     }
 
     @Override
     public void createProduct(Product product) throws DuplicatePortalItemException, Exception {
-        if (adminCacheService.hasProduct(product.getPID()))
+        if (clientCacheService.hasProduct(product.getPID()))
             throw new DuplicatePortalItemException();
         publishProductChange(product, MosquittoTopics.PRODUCT_CREATION_TOPIC);
     }
 
     @Override
     public void updateProduct(Product product) throws NotFoundItemInPortalException, Exception {
-        if (!adminCacheService.hasProduct(product.getPID()))
+        if (!clientCacheService.hasProduct(product.getPID()))
             throw new NotFoundItemInPortalException();
         publishProductChange(product, MosquittoTopics.PRODUCT_UPDATE_TOPIC);
     }
 
     @Override
     public void deleteProduct(ID id) throws NotFoundItemInPortalException, Exception {
-        if (!adminCacheService.hasProduct(id.getID()))
+        if (!clientCacheService.hasProduct(id.getID()))
             throw new NotFoundItemInPortalException();
         publishProductDeletion(id);
     }

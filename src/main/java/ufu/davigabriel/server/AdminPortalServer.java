@@ -9,7 +9,7 @@ import ufu.davigabriel.exceptions.NotFoundItemInPortalException;
 import ufu.davigabriel.models.ClientNative;
 import ufu.davigabriel.models.ProductNative;
 import ufu.davigabriel.models.ReplyNative;
-import ufu.davigabriel.services.AdminCacheService;
+import ufu.davigabriel.services.ClientCacheService;
 import ufu.davigabriel.services.MosquittoAdminUpdaterMiddleware;
 
 import java.io.IOException;
@@ -72,7 +72,7 @@ public class AdminPortalServer {
 
     static public class AdminPortalImpl extends AdminPortalGrpc.AdminPortalImplBase {
         // singleton de db, necessario apenas em buscas porque demais mudancas devem passar pelo MIDDLEWARE
-        private AdminCacheService adminCacheService = AdminCacheService.getInstance();
+        private ClientCacheService clientCacheService = ClientCacheService.getInstance();
 
         // Singleton do Middleware GRPC. Atua como proxy, mudancas sao repassadas para ele, que publica e ao receber noticias muda
         private MosquittoAdminUpdaterMiddleware mosquittoAdminUpdaterMiddleware = MosquittoAdminUpdaterMiddleware.getInstance();
@@ -116,7 +116,7 @@ public class AdminPortalServer {
         @Override
         public void retrieveClient(ID request, StreamObserver<Client> responseObserver) {
             try {
-                responseObserver.onNext(adminCacheService.retrieveClient(request).toClient());
+                responseObserver.onNext(clientCacheService.retrieveClient(request).toClient());
             } catch (NotFoundItemInPortalException exception) {
                 responseObserver.onNext(ClientNative.generateEmptyClientNative().toClient());
             } finally {
@@ -190,7 +190,7 @@ public class AdminPortalServer {
         @Override
         public void retrieveProduct(ID request, StreamObserver<Product> responseObserver) {
             try {
-                responseObserver.onNext(adminCacheService.retrieveProduct(request).toProduct());
+                responseObserver.onNext(clientCacheService.retrieveProduct(request).toProduct());
             } catch (NotFoundItemInPortalException exception) {
                 responseObserver.onNext(ProductNative.generateEmptyProductNative().toProduct());
             } finally {

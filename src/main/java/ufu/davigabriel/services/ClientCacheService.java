@@ -20,37 +20,31 @@ import java.util.HashMap;
  * a database de Admin nao permitira operacoes produtos ou clientes duplicados ou
  * inexistentes.
  */
-public class AdminCacheService implements IAdminProxyDatabase {
-    private static AdminCacheService instance;
+public class ClientCacheService implements IClientProxyDatabase {
+    private static ClientCacheService instance;
     /*
     O esquema de dados nos Hash Maps abaixo (productsMap e clientsMap) ocorre
      da seguinte maneira:
     String (ID) -> String (JSON) representando, respectivamente, um product e
      um client.
     */
-    private HashMap<String, String> productsMap;
     private HashMap<String, String> clientsMap;
 
-    private AdminCacheService() {
+    private ClientCacheService() {
         if (instance == null) {
-            productsMap = new HashMap<>();
             clientsMap = new HashMap<>();
         }
     }
 
-    public static AdminCacheService getInstance() {
+    public static ClientCacheService getInstance() {
         if (instance == null) {
-            instance = new AdminCacheService();
+            instance = new ClientCacheService();
         }
         return instance;
     }
 
-    public void listAllClients() {
+    public void printAllClients() {
         clientsMap.forEach((s, client) -> System.out.println(client));
-    }
-
-    public void listAllProdcuts() {
-        productsMap.forEach((s, productNative) -> System.out.println(productNative));
     }
 
     public void createClient(Client client) throws DuplicatePortalItemException {
@@ -93,44 +87,4 @@ public class AdminCacheService implements IAdminProxyDatabase {
     }
 
     public boolean hasClient(String id) { return clientsMap.containsKey(id); }
-
-    public void createProduct(Product product) throws DuplicatePortalItemException {
-        createProduct(ProductNative.fromProduct(product));
-    }
-
-    public void createProduct(ProductNative productNative) throws DuplicatePortalItemException {
-        if (hasProduct(productNative.getPID()))
-            throw new DuplicatePortalItemException();
-
-        productsMap.putIfAbsent(productNative.getPID(), productNative.toJson());
-    }
-
-    public ProductNative retrieveProduct(ID id) throws NotFoundItemInPortalException {
-        return retrieveProduct(id.getID());
-    }
-
-    public ProductNative retrieveProduct(String id) throws NotFoundItemInPortalException {
-        if (!hasProduct(id)) throw new NotFoundItemInPortalException();
-        return ProductNative.fromJson(productsMap.get(id));
-    }
-
-    public void updateProduct(Product product) throws NotFoundItemInPortalException {
-        updateProduct(ProductNative.fromProduct(product));
-    }
-
-    public void updateProduct(ProductNative productNative) throws NotFoundItemInPortalException {
-        if (!hasProduct(productNative.getPID())) throw new NotFoundItemInPortalException();
-        productsMap.put(productNative.getPID(), productNative.toJson());
-    }
-
-    public void deleteProduct(ID id) throws NotFoundItemInPortalException {
-        deleteProduct(id.getID());
-    }
-
-    public void deleteProduct(String id) throws NotFoundItemInPortalException {
-        if (!hasProduct(id)) throw new NotFoundItemInPortalException();
-        productsMap.remove(id);
-    }
-
-    public boolean hasProduct(String id) { return productsMap.containsKey(id); }
 }

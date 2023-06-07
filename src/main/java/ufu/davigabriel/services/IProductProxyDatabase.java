@@ -11,11 +11,7 @@ import ufu.davigabriel.server.Product;
  * Middleware: falar para todos que houve mudancas
  * Database: realizar mudanca
  */
-public interface IAdminProxyDatabase {
-    void createClient(Client client) throws DuplicatePortalItemException;
-    void updateClient(Client client) throws NotFoundItemInPortalException;
-    void deleteClient(ID id) throws NotFoundItemInPortalException;
-
+public interface IProductProxyDatabase {
     void createProduct(Product product) throws DuplicatePortalItemException;
     void updateProduct(Product Product) throws NotFoundItemInPortalException;
     void deleteProduct(ID id) throws NotFoundItemInPortalException;
