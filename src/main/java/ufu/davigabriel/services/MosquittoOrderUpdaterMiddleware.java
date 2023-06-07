@@ -4,8 +4,6 @@ import com.google.gson.Gson;
 import io.grpc.Grpc;
 import io.grpc.InsecureChannelCredentials;
 import io.grpc.ManagedChannel;
-import org.eclipse.paho.client.mqttv3.MqttException;
-import org.eclipse.paho.client.mqttv3.MqttMessage;
 import ufu.davigabriel.Main;
 import ufu.davigabriel.exceptions.BadRequestException;
 import ufu.davigabriel.exceptions.DuplicatePortalItemException;
@@ -29,7 +27,7 @@ mudar o estado local. No entanto, esta seria uma mudanca no estado global.
 public class MosquittoOrderUpdaterMiddleware extends MosquittoUpdaterMiddleware implements IOrderProxyDatabase {
     private static MosquittoOrderUpdaterMiddleware instance;
     private AdminPortalGrpc.AdminPortalBlockingStub connectionBlockingStub;
-    final private OrderDatabaseService orderDatabaseService = OrderDatabaseService.getInstance();
+    final private OrderCacheService orderCacheService = OrderCacheService.getInstance();
 
     public MosquittoOrderUpdaterMiddleware() {
         super();
@@ -62,11 +60,11 @@ public class MosquittoOrderUpdaterMiddleware extends MosquittoUpdaterMiddleware 
         return instance;
     }
 
-    public void publishOrderChange(Order order, MosquittoTopics mosquittoTopics) throws MqttException {
+    public void publishOrderChange(Order order, MosquittoTopics mosquittoTopics) throws Exception {
         super.getMqttClient().publish(mosquittoTopics.name(), new MqttMessage(new Gson().toJson(order).getBytes()));
     }
 
-    public void publishOrderDeletion(ID id) throws MqttException {
+    public void publishOrderDeletion(ID id) throws Exception {
         super.getMqttClient().publish(MosquittoTopics.ORDER_DELETION_TOPIC.name(), new MqttMessage(id.toByteArray()));
     }
 
@@ -94,12 +92,12 @@ public class MosquittoOrderUpdaterMiddleware extends MosquittoUpdaterMiddleware 
     }
 
     public void throwIfDuplicatedOrder(String id) throws DuplicatePortalItemException {
-        if(orderDatabaseService.hasOrder(id))
+        if(orderCacheService.hasOrder(id))
             throw new DuplicatePortalItemException();
     }
 
     @Override
-    public void createOrder(Order order) throws DuplicatePortalItemException, MqttException, UnauthorizedUserException, NotFoundItemInPortalException, BadRequestException {
+    public void createOrder(Order order) throws DuplicatePortalItemException, Exception, UnauthorizedUserException, NotFoundItemInPortalException, BadRequestException {
         authenticateClient(order.getCID());
         throwIfDuplicatedOrder(order.getOID());
         OrderNative orderNative = validateOrder(order);
@@ -125,12 +123,12 @@ public class MosquittoOrderUpdaterMiddleware extends MosquittoUpdaterMiddleware 
       Cálculo: +5 -9 -> -4 ==> Valor que será somado à quantidade do Produto X.
      */
     @Override
-    public void updateOrder(Order order) throws NotFoundItemInPortalException, MqttException, UnauthorizedUserException, BadRequestException {
+    public void updateOrder(Order order) throws NotFoundItemInPortalException, Exception, UnauthorizedUserException, BadRequestException {
         authenticateClient(order.getCID());
-        if (!orderDatabaseService.hasOrder(order.getOID()))
+        if (!orderCacheService.hasOrder(order.getOID()))
             throw new NotFoundItemInPortalException();
 
-        OrderNative oldOrderNative = orderDatabaseService.retrieveOrder(order.getOID());
+        OrderNative oldOrderNative = orderCacheService.retrieveOrder(order.getOID());
         OrderNative newOrderNative = validateOrder(order);
         newOrderNative.getProducts().removeIf(product -> product.getQuantity() == 0);
         publishOrderChange(order, MosquittoTopics.ORDER_UPDATE_TOPIC);
@@ -153,9 +151,9 @@ public class MosquittoOrderUpdaterMiddleware extends MosquittoUpdaterMiddleware 
     }
 
     @Override
-    public void deleteOrder(ID id) throws NotFoundItemInPortalException, MqttException {
-        OrderNative orderNative = orderDatabaseService.retrieveOrder(id);
-        if (!orderDatabaseService.hasOrder(id.getID()))
+    public void deleteOrder(ID id) throws NotFoundItemInPortalException, Exception {
+        OrderNative orderNative = orderCacheService.retrieveOrder(id);
+        if (!orderCacheService.hasOrder(id.getID()))
             throw new NotFoundItemInPortalException();
         publishOrderDeletion(id);
         orderNative.getProducts().forEach(item -> {

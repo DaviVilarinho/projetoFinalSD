@@ -4,12 +4,11 @@ import io.grpc.Grpc;
 import io.grpc.InsecureServerCredentials;
 import io.grpc.Server;
 import io.grpc.stub.StreamObserver;
-import org.eclipse.paho.client.mqttv3.MqttException;
 import ufu.davigabriel.exceptions.*;
 import ufu.davigabriel.models.OrderNative;
 import ufu.davigabriel.models.ReplyNative;
 import ufu.davigabriel.services.MosquittoOrderUpdaterMiddleware;
-import ufu.davigabriel.services.OrderDatabaseService;
+import ufu.davigabriel.services.OrderCacheService;
 
 import java.io.IOException;
 import java.util.concurrent.TimeUnit;
@@ -76,7 +75,7 @@ public class OrderPortalServer {
 
     static public class OrderPortalImpl extends OrderPortalGrpc.OrderPortalImplBase {
 
-        private final OrderDatabaseService orderDatabaseService = OrderDatabaseService.getInstance();
+        private final OrderCacheService orderCacheService = OrderCacheService.getInstance();
         private final MosquittoOrderUpdaterMiddleware mosquittoOrderUpdaterMiddleware = MosquittoOrderUpdaterMiddleware.getInstance();
 
         @Override
@@ -89,7 +88,7 @@ public class OrderPortalServer {
                         .build());
             } catch (PortalException exception) {
                 exception.replyError(responseObserver);
-            } catch (MqttException e) {
+            } catch (Exception e) {
                 responseObserver.onNext(Reply.newBuilder()
                         .setError(ReplyNative.ERRO_MQTT.getError())
                         .setDescription(ReplyNative.ERRO_MQTT.getDescription())
@@ -102,7 +101,7 @@ public class OrderPortalServer {
         @Override
         public void retrieveOrder(ID request, StreamObserver<Order> responseObserver) {
             try {
-                responseObserver.onNext(orderDatabaseService.retrieveOrder(request).toOrder());
+                responseObserver.onNext(orderCacheService.retrieveOrder(request).toOrder());
             } catch (NotFoundItemInPortalException exception) {
                 responseObserver.onNext(OrderNative.generateEmptyOrderNative().toOrder());
             } finally {
@@ -120,7 +119,7 @@ public class OrderPortalServer {
                         .build());
             } catch (PortalException exception) {
                 exception.replyError(responseObserver);
-            } catch (MqttException e) {
+            } catch (Exception e) {
                 responseObserver.onNext(Reply.newBuilder()
                         .setError(ReplyNative.ERRO_MQTT.getError())
                         .setDescription(ReplyNative.ERRO_MQTT.getDescription())
@@ -140,7 +139,7 @@ public class OrderPortalServer {
                         .build());
             } catch (NotFoundItemInPortalException exception) {
                 exception.replyError(responseObserver);
-            } catch (MqttException e) {
+            } catch (Exception e) {
                 responseObserver.onNext(Reply.newBuilder()
                         .setError(ReplyNative.ERRO_MQTT.getError())
                         .setDescription(ReplyNative.ERRO_MQTT.getDescription())
@@ -154,7 +153,7 @@ public class OrderPortalServer {
         public void retrieveClientOrders(ID request, StreamObserver<Order> responseObserver) {
             try {
                 mosquittoOrderUpdaterMiddleware.authenticateClient(request.getID());
-                orderDatabaseService.retrieveClientOrders(request).forEach((order) -> {
+                orderCacheService.retrieveClientOrders(request).forEach((order) -> {
                     responseObserver.onNext(order.toOrder());
                 });
             } catch (PortalException e) {

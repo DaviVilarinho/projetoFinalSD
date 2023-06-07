@@ -20,8 +20,8 @@ import java.util.HashMap;
  * a database de Admin nao permitira operacoes produtos ou clientes duplicados ou
  * inexistentes.
  */
-public class AdminDatabaseService implements IAdminProxyDatabase {
-    private static AdminDatabaseService instance;
+public class AdminCacheService implements IAdminProxyDatabase {
+    private static AdminCacheService instance;
     /*
     O esquema de dados nos Hash Maps abaixo (productsMap e clientsMap) ocorre
      da seguinte maneira:
@@ -31,16 +31,16 @@ public class AdminDatabaseService implements IAdminProxyDatabase {
     private HashMap<String, String> productsMap;
     private HashMap<String, String> clientsMap;
 
-    private AdminDatabaseService() {
+    private AdminCacheService() {
         if (instance == null) {
             productsMap = new HashMap<>();
             clientsMap = new HashMap<>();
         }
     }
 
-    public static AdminDatabaseService getInstance() {
+    public static AdminCacheService getInstance() {
         if (instance == null) {
-            instance = new AdminDatabaseService();
+            instance = new AdminCacheService();
         }
         return instance;
     }

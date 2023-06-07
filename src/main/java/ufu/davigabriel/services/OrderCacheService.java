@@ -17,8 +17,8 @@ import java.util.stream.Collectors;
  * Esta classe nao tem responsabilidade de sincronia ou atualizacao,
  * apenas realiza mudancas na tabela e nao permite estados invalidos.
  */
-public class OrderDatabaseService implements IOrderProxyDatabase {
-    private static OrderDatabaseService instance;
+public class OrderCacheService implements IOrderProxyDatabase {
+    private static OrderCacheService instance;
     /*
     O esquema de dados no ordersMap ocorre da seguinte maneira: String (ID) ->
     String (JSON) representando uma order.
@@ -34,16 +34,16 @@ public class OrderDatabaseService implements IOrderProxyDatabase {
     entao vale a dor de cabeca :)
      */
 
-    private OrderDatabaseService() {
+    private OrderCacheService() {
         if (instance == null) {
             ordersMap = new HashMap<>();
             clientOrdersMap = new HashMap<>();
         }
     }
 
-    public static OrderDatabaseService getInstance() {
+    public static OrderCacheService getInstance() {
         if (instance == null) {
-            instance = new OrderDatabaseService();
+            instance = new OrderCacheService();
         }
         return instance;
     }

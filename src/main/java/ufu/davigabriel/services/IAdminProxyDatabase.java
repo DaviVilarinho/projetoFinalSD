@@ -1,6 +1,5 @@
 package ufu.davigabriel.services;
 
-import org.eclipse.paho.client.mqttv3.MqttException;
 import ufu.davigabriel.exceptions.DuplicatePortalItemException;
 import ufu.davigabriel.exceptions.NotFoundItemInPortalException;
 import ufu.davigabriel.server.Client;
@@ -13,11 +12,11 @@ import ufu.davigabriel.server.Product;
  * Database: realizar mudanca
  */
 public interface IAdminProxyDatabase {
-    void createClient(Client client) throws DuplicatePortalItemException, MqttException;
-    void updateClient(Client client) throws NotFoundItemInPortalException, MqttException;
-    void deleteClient(ID id) throws NotFoundItemInPortalException, MqttException;
+    void createClient(Client client) throws DuplicatePortalItemException;
+    void updateClient(Client client) throws NotFoundItemInPortalException;
+    void deleteClient(ID id) throws NotFoundItemInPortalException;
 
-    void createProduct(Product product) throws DuplicatePortalItemException, MqttException;
-    void updateProduct(Product Product) throws NotFoundItemInPortalException, MqttException;
-    void deleteProduct(ID id) throws NotFoundItemInPortalException, MqttException;
+    void createProduct(Product product) throws DuplicatePortalItemException;
+    void updateProduct(Product Product) throws NotFoundItemInPortalException;
+    void deleteProduct(ID id) throws NotFoundItemInPortalException;
 }

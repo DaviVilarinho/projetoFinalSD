@@ -1,6 +1,5 @@
 package ufu.davigabriel.services;
 
-import org.eclipse.paho.client.mqttv3.MqttException;
 import ufu.davigabriel.exceptions.BadRequestException;
 import ufu.davigabriel.exceptions.DuplicatePortalItemException;
 import ufu.davigabriel.exceptions.NotFoundItemInPortalException;
@@ -14,7 +13,7 @@ import ufu.davigabriel.server.Order;
  * Database: realizar mudanca
  */
 public interface IOrderProxyDatabase {
-    void createOrder(Order order) throws DuplicatePortalItemException, MqttException, UnauthorizedUserException, NotFoundItemInPortalException, BadRequestException;
-    void updateOrder(Order order) throws NotFoundItemInPortalException, MqttException, UnauthorizedUserException, BadRequestException;
-    void deleteOrder(ID id) throws NotFoundItemInPortalException, MqttException;
+    void createOrder(Order order) throws DuplicatePortalItemException, Exception, UnauthorizedUserException, NotFoundItemInPortalException, BadRequestException;
+    void updateOrder(Order order) throws NotFoundItemInPortalException, Exception, UnauthorizedUserException, BadRequestException;
+    void deleteOrder(ID id) throws NotFoundItemInPortalException, Exception;
 }

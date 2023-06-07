@@ -1,28 +1,9 @@
 package ufu.davigabriel.services;
 
 import lombok.Getter;
-import org.eclipse.paho.client.mqttv3.MqttClient;
-import org.eclipse.paho.client.mqttv3.MqttConnectOptions;
-import org.eclipse.paho.client.mqttv3.MqttException;
-import org.eclipse.paho.client.mqttv3.persist.MemoryPersistence;
 
 import java.util.Random;
 
-/**
- * Um Middleware se fez necessario no Projeto na medida em que:
- * * E possivel escutar requests
- * * E possivel mudar
- * * E necessario atualizar multiplos servers
- *
- * O Middleware seria nosso proxy para a database. Toda *mudanca* (nao consulta) ao banco
- * de dados precisa passar por aqui porque se faz necessario espalhar as mudancas pelas instancias do server
- * e notificar mudancas recebidas via request.
- *
- * Por questao de arquitetura e configuracoes do mosquitto, este middleware conecta a uma instancia
- * Mosquitto e publica toda mudanca assim que recebida, nao realiza mudancas locais.
- * Paralelamente, existe uma thread subscrita aos topicos de interesse definidos nas classes que herdam esta
- * que forma o segundo elo do middleware que seria atualizar assim que recebida mensagens de mudanca
- */
 @Getter
 public abstract class MosquittoUpdaterMiddleware {
     final private boolean SHOULD_CONNECT_ONLINE = false;
@@ -46,7 +27,7 @@ public abstract class MosquittoUpdaterMiddleware {
             System.out.println("Conectado com sucesso");
             this.mqttClient.subscribe(getInterestedTopics());
             System.out.println("Subscrito...");
-        } catch (MqttException me) {
+        } catch (Exception me) {
             System.out.println("Nao foi possivel inicializar o client MQTT, encerrando");
             System.out.println("reason: " + me.getReasonCode());
             System.out.println("msg: " + me.getMessage());
@@ -68,7 +49,7 @@ public abstract class MosquittoUpdaterMiddleware {
         try {
             this.mqttClient.disconnect();
             System.out.println("Desconectado com sucesso");
-        } catch (MqttException e) {
+        } catch (Exception e) {
             System.out.println("Nao foi possivel desconectar do broker... Conexao estagnada");
         }
     }
