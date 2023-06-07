@@ -47,8 +47,6 @@ public class ProductCacheService implements IProductProxyDatabase {
         productsMap.forEach((s, productNative) -> System.out.println(productNative));
     }
 
-    public boolean hasClient(String id) { return clientsMap.containsKey(id); }
-
     public void createProduct(Product product) throws DuplicatePortalItemException {
         createProduct(ProductNative.fromProduct(product));
     }

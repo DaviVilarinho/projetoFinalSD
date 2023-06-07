@@ -7,7 +7,6 @@ import io.grpc.stub.StreamObserver;
 import ufu.davigabriel.exceptions.*;
 import ufu.davigabriel.models.OrderNative;
 import ufu.davigabriel.models.ReplyNative;
-import ufu.davigabriel.services.MosquittoOrderUpdaterMiddleware;
 import ufu.davigabriel.services.OrderCacheService;
 
 import java.io.IOException;
@@ -76,12 +75,10 @@ public class OrderPortalServer {
     static public class OrderPortalImpl extends OrderPortalGrpc.OrderPortalImplBase {
 
         private final OrderCacheService orderCacheService = OrderCacheService.getInstance();
-        private final MosquittoOrderUpdaterMiddleware mosquittoOrderUpdaterMiddleware = MosquittoOrderUpdaterMiddleware.getInstance();
 
         @Override
         public void createOrder(Order request, StreamObserver<Reply> responseObserver) {
             try {
-                mosquittoOrderUpdaterMiddleware.createOrder(request);
                 responseObserver.onNext(Reply.newBuilder()
                         .setError(ReplyNative.SUCESSO.getError())
                         .setDescription(ReplyNative.SUCESSO.getDescription())
@@ -90,8 +87,8 @@ public class OrderPortalServer {
                 exception.replyError(responseObserver);
             } catch (Exception e) {
                 responseObserver.onNext(Reply.newBuilder()
-                        .setError(ReplyNative.ERRO_MQTT.getError())
-                        .setDescription(ReplyNative.ERRO_MQTT.getDescription())
+                        .setError(ReplyNative.ERRO_PROTOCOLOS.getError())
+                        .setDescription(ReplyNative.ERRO_PROTOCOLOS.getDescription())
                         .build());
             } finally {
                 responseObserver.onCompleted();
@@ -112,7 +109,6 @@ public class OrderPortalServer {
         @Override
         public void updateOrder(Order request, StreamObserver<Reply> responseObserver) {
             try {
-                mosquittoOrderUpdaterMiddleware.updateOrder(request);
                 responseObserver.onNext(Reply.newBuilder()
                         .setError(ReplyNative.SUCESSO.getError())
                         .setDescription(ReplyNative.SUCESSO.getDescription())
@@ -121,8 +117,8 @@ public class OrderPortalServer {
                 exception.replyError(responseObserver);
             } catch (Exception e) {
                 responseObserver.onNext(Reply.newBuilder()
-                        .setError(ReplyNative.ERRO_MQTT.getError())
-                        .setDescription(ReplyNative.ERRO_MQTT.getDescription())
+                        .setError(ReplyNative.ERRO_PROTOCOLOS.getError())
+                        .setDescription(ReplyNative.ERRO_PROTOCOLOS.getDescription())
                         .build());
             } finally {
                 responseObserver.onCompleted();
@@ -132,7 +128,6 @@ public class OrderPortalServer {
         @Override
         public void deleteOrder(ID request, StreamObserver<Reply> responseObserver) {
             try {
-                mosquittoOrderUpdaterMiddleware.deleteOrder(request);
                 responseObserver.onNext(Reply.newBuilder()
                         .setError(ReplyNative.SUCESSO.getError())
                         .setDescription(ReplyNative.SUCESSO.getDescription())
@@ -141,8 +136,8 @@ public class OrderPortalServer {
                 exception.replyError(responseObserver);
             } catch (Exception e) {
                 responseObserver.onNext(Reply.newBuilder()
-                        .setError(ReplyNative.ERRO_MQTT.getError())
-                        .setDescription(ReplyNative.ERRO_MQTT.getDescription())
+                        .setError(ReplyNative.ERRO_PROTOCOLOS.getError())
+                        .setDescription(ReplyNative.ERRO_PROTOCOLOS.getDescription())
                         .build());
             } finally {
                 responseObserver.onCompleted();
@@ -152,7 +147,6 @@ public class OrderPortalServer {
         @Override
         public void retrieveClientOrders(ID request, StreamObserver<Order> responseObserver) {
             try {
-                mosquittoOrderUpdaterMiddleware.authenticateClient(request.getID());
                 orderCacheService.retrieveClientOrders(request).forEach((order) -> {
                     responseObserver.onNext(order.toOrder());
                 });

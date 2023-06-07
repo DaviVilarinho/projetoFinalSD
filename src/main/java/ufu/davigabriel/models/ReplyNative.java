@@ -15,7 +15,7 @@ public enum ReplyNative {
     INEXISTENTE(404, "Item nao existe."),
     DUPLICATA(422, "Item ja existe."),
     ERRO_DESCONHECIDO(500, "Falha interna."),
-    ERRO_MQTT(502, "Erro no servidor Mosquitto.");
+    ERRO_PROTOCOLOS(502, "Erro no servidor Mosquitto.");
 
     private final int error;
     private final String description;
