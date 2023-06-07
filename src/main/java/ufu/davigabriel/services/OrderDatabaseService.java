@@ -1,5 +1,4 @@
 package ufu.davigabriel.services;
-//todo database validator
 
 import ufu.davigabriel.exceptions.DuplicatePortalItemException;
 import ufu.davigabriel.exceptions.NotFoundItemInPortalException;
