@@ -8,10 +8,9 @@ import java.nio.charset.Charset;
         import org.apache.ratis.proto.*;
         import org.apache.ratis.protocol.Message;
         import org.apache.ratis.statemachine.TransactionContext;
-        import org.apache.ratis.statemachine.impl.BaseStateMachine;
 
 
-public class MaquinaDeEstados extends BaseStateMachine {
+public class BaseStateMachine extends org.apache.ratis.statemachine.impl.BaseStateMachine {
         private final Map<String, String> key2values = new ConcurrentHashMap<>();
 
         @Override

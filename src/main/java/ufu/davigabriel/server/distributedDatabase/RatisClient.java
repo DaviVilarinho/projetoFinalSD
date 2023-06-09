@@ -1,21 +1,21 @@
 package ufu.davigabriel.server.distributedDatabase;
 
 import java.io.IOException;
-        import java.net.InetSocketAddress;
-        import java.nio.charset.Charset;
-        import java.util.HashMap;
-        import java.util.List;
-        import java.util.Map;
-        import java.util.concurrent.*;
-        import java.util.stream.Collectors;
-        import org.apache.ratis.client.RaftClient;
-        import org.apache.ratis.conf.Parameters;
-        import org.apache.ratis.conf.RaftProperties;
-        import org.apache.ratis.grpc.GrpcFactory;
-        import org.apache.ratis.protocol.*;
-        import org.apache.ratis.thirdparty.com.google.protobuf.ByteString;
+import java.net.InetSocketAddress;
+import java.nio.charset.Charset;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.*;
+import java.util.stream.Collectors;
+import org.apache.ratis.client.RaftClient;
+import org.apache.ratis.conf.Parameters;
+import org.apache.ratis.conf.RaftProperties;
+import org.apache.ratis.grpc.GrpcFactory;
+import org.apache.ratis.protocol.*;
+import org.apache.ratis.thirdparty.com.google.protobuf.ByteString;
 
-public class Cliente {
+public class RatisClient {
     public static void main(String args[])
             throws IOException, InterruptedException, ExecutionException {
         String raftGroupId = "raft_group____um"; // 16 caracteres.
@@ -29,6 +29,7 @@ public class Cliente {
                 id2addr.entrySet().stream()
                         .map(e -> RaftPeer.newBuilder().setId(e.getKey()).setAddress(e.getValue()).build())
                         .collect(Collectors.toList());
+
 
         final RaftGroup raftGroup =
                 RaftGroup.valueOf(RaftGroupId.valueOf(ByteString.copyFromUtf8(raftGroupId)), addresses);
