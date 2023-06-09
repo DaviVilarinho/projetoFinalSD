@@ -87,4 +87,10 @@ public class ClientCacheService implements IClientProxyDatabase {
     }
 
     public boolean hasClient(String id) { return clientsMap.containsKey(id); }
+    public boolean hasClient(Client client) { return clientsMap.containsKey(client.getCID()); }
+
+    @Override
+    public Client getClient(ID id) throws NotFoundItemInPortalException {
+        return retrieveClient(id).toClient();
+    }
 }
