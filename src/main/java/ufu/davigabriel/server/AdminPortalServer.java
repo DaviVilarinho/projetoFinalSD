@@ -10,6 +10,7 @@ import ufu.davigabriel.models.ClientNative;
 import ufu.davigabriel.models.ProductNative;
 import ufu.davigabriel.models.ReplyNative;
 import ufu.davigabriel.services.ClientCacheService;
+import ufu.davigabriel.services.ProductCacheService;
 
 import java.io.IOException;
 import java.util.concurrent.TimeUnit;
@@ -72,6 +73,7 @@ public class AdminPortalServer {
     static public class AdminPortalImpl extends AdminPortalGrpc.AdminPortalImplBase {
         // singleton de db, necessario apenas em buscas porque demais mudancas devem passar pelo MIDDLEWARE
         private ClientCacheService clientCacheService = ClientCacheService.getInstance();
+        private ProductCacheService productCacheService = ProductCacheService.getInstance();
 
         @Override
         public void createClient(Client request, StreamObserver<Reply> responseObserver) {
@@ -80,6 +82,7 @@ public class AdminPortalServer {
                         .setError(ReplyNative.SUCESSO.getError())
                         .setDescription(ReplyNative.SUCESSO.getDescription())
                         .build());
+                throw new DuplicatePortalItemException();
             } catch (DuplicatePortalItemException exception) {
                 exception.replyError(responseObserver);
             } catch (Exception specificException) { // TODO mudar pra especifica...
@@ -96,6 +99,7 @@ public class AdminPortalServer {
         public void retrieveClient(ID request, StreamObserver<Client> responseObserver) {
             try {
                 responseObserver.onNext(clientCacheService.retrieveClient(request).toClient());
+                throw new NotFoundItemInPortalException();
             } catch (NotFoundItemInPortalException exception) {
                 responseObserver.onNext(ClientNative.generateEmptyClientNative().toClient());
             } finally {
@@ -110,13 +114,14 @@ public class AdminPortalServer {
                         .setError(ReplyNative.SUCESSO.getError())
                         .setDescription(ReplyNative.SUCESSO.getDescription())
                         .build());
+                throw new NotFoundItemInPortalException();
+            } catch (NotFoundItemInPortalException e) {
+                e.replyError(responseObserver);
             } catch (Exception specificException) {
                 responseObserver.onNext(Reply.newBuilder()
                         .setError(ReplyNative.ERRO_PROTOCOLOS.getError())
                         .setDescription(ReplyNative.ERRO_PROTOCOLOS.getDescription())
                         .build());
-            } catch (NotFoundItemInPortalException e) {
-                e.replyError(responseObserver);
             } finally {
                 responseObserver.onCompleted();
             }
@@ -129,6 +134,7 @@ public class AdminPortalServer {
                         .setError(ReplyNative.SUCESSO.getError())
                         .setDescription(ReplyNative.SUCESSO.getDescription())
                         .build());
+                throw new NotFoundItemInPortalException();
             } catch (NotFoundItemInPortalException notFoundItemInDatabaseException) {
                 notFoundItemInDatabaseException.replyError(responseObserver);
             } catch (Exception specificException) {
@@ -148,13 +154,14 @@ public class AdminPortalServer {
                         .setError(ReplyNative.SUCESSO.getError())
                         .setDescription(ReplyNative.SUCESSO.getDescription())
                         .build());
+                throw new DuplicatePortalItemException();
+            } catch (DuplicatePortalItemException e) {
+                e.replyError(responseObserver);
             } catch (Exception specificException) {
                 responseObserver.onNext(Reply.newBuilder()
                         .setError(ReplyNative.ERRO_PROTOCOLOS.getError())
                         .setDescription(ReplyNative.ERRO_PROTOCOLOS.getDescription())
                         .build());
-            } catch (DuplicatePortalItemException e) {
-                e.replyError(responseObserver);
             } finally {
                 responseObserver.onCompleted();
             }
@@ -163,7 +170,8 @@ public class AdminPortalServer {
         @Override
         public void retrieveProduct(ID request, StreamObserver<Product> responseObserver) {
             try {
-                responseObserver.onNext(clientCacheService.retrieveProduct(request).toProduct());
+                responseObserver.onNext(productCacheService.retrieveProduct(request).toProduct());
+                throw new NotFoundItemInPortalException();
             } catch (NotFoundItemInPortalException exception) {
                 responseObserver.onNext(ProductNative.generateEmptyProductNative().toProduct());
             } finally {
@@ -178,13 +186,14 @@ public class AdminPortalServer {
                         .setError(ReplyNative.SUCESSO.getError())
                         .setDescription(ReplyNative.SUCESSO.getDescription())
                         .build());
+                throw new NotFoundItemInPortalException();
+            } catch (NotFoundItemInPortalException e) {
+                e.replyError(responseObserver);
             } catch (Exception specificException) {
                 responseObserver.onNext(Reply.newBuilder()
                         .setError(ReplyNative.ERRO_PROTOCOLOS.getError())
                         .setDescription(ReplyNative.ERRO_PROTOCOLOS.getDescription())
                         .build());
-            } catch (NotFoundItemInPortalException e) {
-                e.replyError(responseObserver);
             } finally {
                 responseObserver.onCompleted();
             }
@@ -198,13 +207,13 @@ public class AdminPortalServer {
                         .setDescription(ReplyNative.SUCESSO.getDescription())
                         .build());
                 throw new NotFoundItemInPortalException();
+            } catch (NotFoundItemInPortalException e) {
+                e.replyError(responseObserver);
             } catch (Exception specificException) {
                 responseObserver.onNext(Reply.newBuilder()
                         .setError(ReplyNative.ERRO_PROTOCOLOS.getError())
                         .setDescription(ReplyNative.ERRO_PROTOCOLOS.getDescription())
                         .build());
-            } catch (NotFoundItemInPortalException e) {
-                e.replyError(responseObserver);
             } finally {
                 responseObserver.onCompleted();
             }

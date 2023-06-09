@@ -1,91 +1,65 @@
 package ufu.davigabriel.server.distributedDatabase;
 
-import java.io.IOException;
-import java.net.InetSocketAddress;
-import java.nio.charset.Charset;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.concurrent.*;
-import java.util.stream.Collectors;
 import org.apache.ratis.client.RaftClient;
 import org.apache.ratis.conf.Parameters;
 import org.apache.ratis.conf.RaftProperties;
 import org.apache.ratis.grpc.GrpcFactory;
 import org.apache.ratis.protocol.*;
 import org.apache.ratis.thirdparty.com.google.protobuf.ByteString;
+import ufu.davigabriel.models.GlobalVarsService;
+
+import java.io.IOException;
+import java.nio.charset.Charset;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
+import java.util.stream.Collectors;
 
 public class RatisClient {
-    public static void main(String args[])
-            throws IOException, InterruptedException, ExecutionException {
-        String raftGroupId = "raft_group____um"; // 16 caracteres.
+    private final int partitionPeer;
+    private final RaftClient client;
 
-        Map<String, InetSocketAddress> id2addr = new HashMap<>();
-        id2addr.put("p1", new InetSocketAddress("127.0.0.1", 3000));
-        id2addr.put("p2", new InetSocketAddress("127.0.0.1", 3500));
-        id2addr.put("p3", new InetSocketAddress("127.0.0.1", 4000));
-
-        List<RaftPeer> addresses =
-                id2addr.entrySet().stream()
-                        .map(e -> RaftPeer.newBuilder().setId(e.getKey()).setAddress(e.getValue()).build())
-                        .collect(Collectors.toList());
-
+    public RatisClient(int partitionPeer) {
+        this.partitionPeer = partitionPeer;
 
         final RaftGroup raftGroup =
-                RaftGroup.valueOf(RaftGroupId.valueOf(ByteString.copyFromUtf8(raftGroupId)), addresses);
+                RaftGroup.valueOf(RaftGroupId.valueOf(
+                                          ByteString.copyFromUtf8(GlobalVarsService.PARTITION_RATIS_IDS[partitionPeer])),
+                                  GlobalVarsService.getPeerIdAddressesFromPartition(
+                                          partitionPeer).entrySet().stream().map(e -> RaftPeer.newBuilder().setId(
+                                          e.getKey()).setAddress(e.getValue()).build()).collect(Collectors.toList()));
         RaftProperties raftProperties = new RaftProperties();
 
-        RaftClient client =
-                RaftClient.newBuilder()
-                        .setProperties(raftProperties)
-                        .setRaftGroup(raftGroup)
-                        .setClientRpc(
-                                new GrpcFactory(new Parameters())
-                                        .newRaftClientRpc(ClientId.randomId(), raftProperties))
-                        .build();
+        this.client =
+                RaftClient.newBuilder().setProperties(raftProperties).setRaftGroup(raftGroup).setClientRpc(
+                        new GrpcFactory(new Parameters()).newRaftClientRpc(ClientId.randomId(),
+                                                                           raftProperties)).build();
+    }
 
-        RaftClientReply getValue;
-        CompletableFuture<RaftClientReply> compGetValue;
-        String response;
-        switch (args[0]) {
-            case "add":
-                getValue = client.io().send(Message.valueOf("add:" + args[1] + ":" + args[2]));
-                response = getValue.getMessage().getContent().toString(Charset.defaultCharset());
-                System.out.println("Resposta:" + response);
-                break;
-            case "get":
-                getValue = client.io().sendReadOnly(Message.valueOf("get:" + args[1]));
-                response = getValue.getMessage().getContent().toString(Charset.defaultCharset());
-                System.out.println("Resposta:" + response);
-                break;
-            case "del":
-                getValue = client.io().send(Message.valueOf("del:" + args[1]));
-                response = getValue.getMessage().getContent().toString(Charset.defaultCharset());
-                System.out.println("Resposta:" + response);
-                break;
-            case "clear":
-                getValue = client.io().send(Message.valueOf("clear"));
-                response = getValue.getMessage().getContent().toString(Charset.defaultCharset());
-                System.out.println("Resposta:" + response);
-                break;
-            case "add_async":
-                compGetValue = client.async().send(Message.valueOf("add:" + args[1] + ":" + args[2]));
-                getValue = compGetValue.get();
-                response = getValue.getMessage().getContent().toString(Charset.defaultCharset());
-                System.out.println("Resposta: " + response);
-                break;
-            case "get_stale":
-                getValue =
-                        client
-                                .io()
-                                .sendStaleRead(Message.valueOf("get:" + args[1]), 0, RaftPeerId.valueOf(args[2]));
-                response = getValue.getMessage().getContent().toString(Charset.defaultCharset());
-                System.out.println("Resposta: " + response);
-                break;
-            default:
-                System.out.println("comando inválido");
-        }
+    public RaftClientReply add(String key, String value) throws IOException {
+        return client.io().send(Message.valueOf("add:" + key + ":" + value));
+    }
 
+    public CompletableFuture<RaftClientReply> addAsync(String key, String value) throws IOException {
+        return client.async().send(Message.valueOf("add:" + key + ":" + value));
+    }
+
+    public RaftClientReply get(String key) throws IOException {
+        return client.io().send(Message.valueOf("get:" + key));
+    }
+
+    public RaftClientReply getStale(String key, String peerId) throws IOException {
+        return client.io().sendStaleRead(Message.valueOf("get:" + key), 0, RaftPeerId.valueOf(peerId));
+    }
+
+    public RaftClientReply del(String key) throws IOException {
+        return client.io().send(Message.valueOf("del:" + key));
+    }
+
+    public RaftClientReply clear() throws IOException {
+        return client.io().send(Message.valueOf("clear"));
+    }
+
+    public void close() throws IOException {
         client.close();
     }
 }

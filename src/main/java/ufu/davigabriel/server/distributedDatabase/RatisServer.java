@@ -44,7 +44,7 @@ public class RatisServer {
         List<RaftPeer> addresses = GlobalVarsService.getRaftPeersFromPartition(ratisPartitionNumber);
 
         if (addresses.stream().noneMatch(p -> p.getId().equals(myId))) {
-            System.out.println("Identificador " + ratisPartitionPeerId + " é inválido ou não " + "pertence à particao " + ratisPartitionNumber);
+            System.out.println("Identificador " + ratisPartitionPeerId + " é inválido ou não pertence à particao " + ratisPartitionNumber);
             System.exit(1);
         }
 

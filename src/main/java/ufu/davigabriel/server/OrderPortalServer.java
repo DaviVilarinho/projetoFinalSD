@@ -83,6 +83,7 @@ public class OrderPortalServer {
                         .setError(ReplyNative.SUCESSO.getError())
                         .setDescription(ReplyNative.SUCESSO.getDescription())
                         .build());
+                throw new NotFoundItemInPortalException();
             } catch (PortalException exception) {
                 exception.replyError(responseObserver);
             } catch (Exception e) {
@@ -113,6 +114,7 @@ public class OrderPortalServer {
                         .setError(ReplyNative.SUCESSO.getError())
                         .setDescription(ReplyNative.SUCESSO.getDescription())
                         .build());
+                throw new NotFoundItemInPortalException();
             } catch (PortalException exception) {
                 exception.replyError(responseObserver);
             } catch (Exception e) {
@@ -132,7 +134,8 @@ public class OrderPortalServer {
                         .setError(ReplyNative.SUCESSO.getError())
                         .setDescription(ReplyNative.SUCESSO.getDescription())
                         .build());
-            } catch (NotFoundItemInPortalException exception) {
+                throw new NotFoundItemInPortalException();
+            } catch (PortalException exception) {
                 exception.replyError(responseObserver);
             } catch (Exception e) {
                 responseObserver.onNext(Reply.newBuilder()
@@ -150,6 +153,7 @@ public class OrderPortalServer {
                 orderCacheService.retrieveClientOrders(request).forEach((order) -> {
                     responseObserver.onNext(order.toOrder());
                 });
+                throw new NotFoundItemInPortalException();
             } catch (PortalException e) {
                 e.replyError(responseObserver);
             } finally {
