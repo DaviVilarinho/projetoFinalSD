@@ -19,12 +19,8 @@ public class AdminPortalClient {
             AdminPortalServer.BASE_PORTAL_SERVER_PORT + new Random().nextInt(Main.PORTAL_SERVERS);
     public static String TARGET_SERVER = String.format("%s:%d", HOST,
             SERVER_PORT);
-    private final AdminPortalGrpc.AdminPortalBlockingStub blockingStub;
+    private static AdminPortalGrpc.AdminPortalBlockingStub blockingStub;
     private static final Scanner scanner = new Scanner(System.in);
-
-    public AdminPortalClient(Channel channel) {
-        this.blockingStub = AdminPortalGrpc.newBlockingStub(channel);
-    }
 
     public static void main(String[] args) throws InterruptedException {
         System.out.println("----------------------------------");
@@ -49,7 +45,8 @@ public class AdminPortalClient {
         ManagedChannel channel = Grpc.newChannelBuilder(TARGET_SERVER, InsecureChannelCredentials.create()).build();
 
         try {
-            AdminPortalClient adminPortalClient = new AdminPortalClient(channel);
+            AdminPortalClient.blockingStub = AdminPortalGrpc.newBlockingStub(channel);
+
             System.out.println("Conectado com server " + TARGET_SERVER);
 
             AdminPortalOption adminPortalOption = AdminPortalOption.NOOP;
@@ -77,14 +74,14 @@ public class AdminPortalClient {
 
                         String cid = geraId(name);
                         System.out.println("Escolhendo ID: " + cid);
-                        ReplyNative response = createClient(adminPortalClient.blockingStub, ClientNative.builder().CID(cid).name(name).zipCode(zipCode).build());
+                        ReplyNative response = createClient(blockingStub, ClientNative.builder().CID(cid).name(name).zipCode(zipCode).build());
                         if (response.getError() != 0)
                             System.out.println("ERRO: " + response.getDescription());
                         else System.out.println("CLIENTE INSERIDO");
                     }
                     case BUSCAR_CLIENTE -> {
                         System.out.print("Escreva o ID do cliente: ");
-                        Optional<ClientNative> foundClient = retrieveClient(adminPortalClient.blockingStub, scanner.nextLine());
+                        Optional<ClientNative> foundClient = retrieveClient(blockingStub, scanner.nextLine());
                         foundClient.ifPresentOrElse(client -> {
                             System.out.println("CLIENTE ENCONTRADO");
                             System.out.println(client);
@@ -99,7 +96,7 @@ public class AdminPortalClient {
                         System.out.print("Escreva o novo zipCode do cliente: ");
                         String zipCode = scanner.nextLine();
 
-                        ReplyNative response = updateClient(adminPortalClient.blockingStub, ClientNative.builder().CID(cidAMudar).name(name).zipCode(zipCode).build());
+                        ReplyNative response = updateClient(blockingStub, ClientNative.builder().CID(cidAMudar).name(name).zipCode(zipCode).build());
                         if (response.getError() != 0)
                             System.out.println("ERRO: " + response.getDescription());
                         else System.out.println("CLIENTE ALTERADO");
@@ -107,7 +104,7 @@ public class AdminPortalClient {
                     case REMOVER_CLIENTE -> {
                         System.out.print("Escreva o ID do cliente: ");
 
-                        ReplyNative response = removeClient(adminPortalClient.blockingStub, scanner.nextLine());
+                        ReplyNative response = removeClient(blockingStub, scanner.nextLine());
                         if (response.getError() != 0)
                             System.out.println("ERRO: " + response.getDescription());
                         else System.out.println("CLIENTE REMOVIDO");
@@ -126,7 +123,7 @@ public class AdminPortalClient {
                             String productId = geraId(name);
                             System.out.println("ID a ser usado nele: " + productId);
 
-                            ReplyNative response = createProduct(adminPortalClient.blockingStub, ProductNative.builder().PID(productId).name(name).description(description).price(price).quantity(quantity).build());
+                            ReplyNative response = createProduct(blockingStub, ProductNative.builder().PID(productId).name(name).description(description).price(price).quantity(quantity).build());
                             if (response.getError() != 0)
                                 System.out.println("ERRO: " + response.getDescription());
                             else System.out.println("PRODUTO INSERIDO");
@@ -137,7 +134,7 @@ public class AdminPortalClient {
                     }
                     case BUSCAR_PRODUTO -> {
                         System.out.print("Escreva o ID do produto: ");
-                        Optional<ProductNative> foundProduct = retrieveProduct(adminPortalClient.blockingStub, scanner.nextLine());
+                        Optional<ProductNative> foundProduct = retrieveProduct(blockingStub, scanner.nextLine());
                         foundProduct.ifPresentOrElse(productNative -> {
                             System.out.println("PRODUTO ENCONTRADO");
                             System.out.println(productNative);
@@ -157,7 +154,7 @@ public class AdminPortalClient {
                                     "produto: ");
                             int quantity = Integer.parseInt(scanner.nextLine());
 
-                            ReplyNative response = updateProduct(adminPortalClient.blockingStub, ProductNative.builder().PID(targetProductId).name(name).description(description).price(price).quantity(quantity).build());
+                            ReplyNative response = updateProduct(blockingStub, ProductNative.builder().PID(targetProductId).name(name).description(description).price(price).quantity(quantity).build());
                             if (response.getError() != 0)
                                 System.out.println("ERRO: " + response.getDescription());
                             else System.out.println("PRODUTO ATUALIZADO");
@@ -169,7 +166,7 @@ public class AdminPortalClient {
                     case REMOVER_PRODUTO -> {
                         System.out.print("Escreva o ID do produto: ");
 
-                        ReplyNative response = removeProduct(adminPortalClient.blockingStub, scanner.nextLine());
+                        ReplyNative response = removeProduct(blockingStub, scanner.nextLine());
                         if (response.getError() != 0)
                             System.out.println("ERRO: " + response.getDescription());
                         else System.out.println("PRODUTO REMOVIDO");

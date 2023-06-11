@@ -4,19 +4,24 @@ import io.grpc.Grpc;
 import io.grpc.InsecureServerCredentials;
 import io.grpc.Server;
 import io.grpc.stub.StreamObserver;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import ufu.davigabriel.exceptions.DuplicatePortalItemException;
 import ufu.davigabriel.exceptions.NotFoundItemInPortalException;
+import ufu.davigabriel.exceptions.PortalException;
 import ufu.davigabriel.models.ClientNative;
 import ufu.davigabriel.models.ProductNative;
 import ufu.davigabriel.models.ReplyNative;
-import ufu.davigabriel.services.ClientCacheService;
+import ufu.davigabriel.services.ClientUpdaterMiddleware;
 import ufu.davigabriel.services.ProductCacheService;
 
+import javax.sound.sampled.Port;
 import java.io.IOException;
 import java.util.concurrent.TimeUnit;
 
 public class AdminPortalServer {
     public static int BASE_PORTAL_SERVER_PORT = 25506; // definindo porta base para servers
+    private static Logger logger = LoggerFactory.getLogger(AdminPortalServer.class);
     private Server server;
 
     public static void main(String[] args) throws IOException, InterruptedException {
@@ -73,25 +78,23 @@ public class AdminPortalServer {
     }
 
     static public class AdminPortalImpl extends AdminPortalGrpc.AdminPortalImplBase {
-        // singleton de db, necessario apenas em buscas porque demais mudancas devem passar pelo MIDDLEWARE
-        private ClientCacheService clientCacheService = ClientCacheService.getInstance();
         private ProductCacheService productCacheService = ProductCacheService.getInstance();
+        private ClientUpdaterMiddleware clientUpdaterMiddleware = ClientUpdaterMiddleware.getInstance();
 
         @Override
         public void createClient(Client request, StreamObserver<Reply> responseObserver) {
+            logger.info("CRIAR CLIENTE " + request.toString());
             try {
+                clientUpdaterMiddleware.createClient(request);
                 responseObserver.onNext(Reply.newBuilder()
                                                 .setError(ReplyNative.SUCESSO.getError())
                                                 .setDescription(ReplyNative.SUCESSO.getDescription())
                                                 .build());
-                throw new DuplicatePortalItemException();
-            } catch (DuplicatePortalItemException exception) {
+                logger.info("CLIENTE CRIADO");
+            } catch (PortalException exception) {
+                logger.error("REQUISICAO DE CLIENTE " + request + "NAO CRIADO.\n " + exception.getMessage() +
+                                     "\n" + exception.getStackTrace().toString());
                 exception.replyError(responseObserver);
-            } catch (Exception specificException) { // TODO mudar pra especifica...
-                responseObserver.onNext(Reply.newBuilder()
-                                                .setError(ReplyNative.ERRO_PROTOCOLOS.getError())
-                                                .setDescription(ReplyNative.ERRO_PROTOCOLOS.getDescription())
-                                                .build());
             } finally {
                 responseObserver.onCompleted();
             }
@@ -99,10 +102,13 @@ public class AdminPortalServer {
 
         @Override
         public void retrieveClient(ID request, StreamObserver<Client> responseObserver) {
+            logger.info("BUSCAR CLIENTE " + request.toString());
             try {
-                responseObserver.onNext(clientCacheService.retrieveClient(request).toClient());
-                throw new NotFoundItemInPortalException();
-            } catch (NotFoundItemInPortalException exception) {
+                responseObserver.onNext(clientUpdaterMiddleware.getClient(request));
+                logger.debug("CLIENTE RETORNADO COM SUCESSO");
+            } catch (PortalException exception) {
+                logger.info("NÃO FOI POSSÍVEL BUSCAR O CLIENTE " + request + " retornando nulo. " + exception.getMessage());
+                exception.printStackTrace();
                 responseObserver.onNext(ClientNative.generateEmptyClientNative().toClient());
             } finally {
                 responseObserver.onCompleted();
@@ -111,19 +117,18 @@ public class AdminPortalServer {
 
         @Override
         public void updateClient(Client request, StreamObserver<Reply> responseObserver) {
+            logger.info("DAR UPDATE EM CLIENTE " + request);
             try {
+                clientUpdaterMiddleware.updateClient(request);
                 responseObserver.onNext(Reply.newBuilder()
                                                 .setError(ReplyNative.SUCESSO.getError())
                                                 .setDescription(ReplyNative.SUCESSO.getDescription())
                                                 .build());
-                throw new NotFoundItemInPortalException();
-            } catch (NotFoundItemInPortalException e) {
-                e.replyError(responseObserver);
-            } catch (Exception specificException) {
-                responseObserver.onNext(Reply.newBuilder()
-                                                .setError(ReplyNative.ERRO_PROTOCOLOS.getError())
-                                                .setDescription(ReplyNative.ERRO_PROTOCOLOS.getDescription())
-                                                .build());
+                logger.info("UPDATE CONCLUÍDO COM SUCESSO");
+            } catch (PortalException exception) {
+                logger.info("NÃO FOI POSSÍVEL ATUALIZAR O CLIENTE " + request + exception.getMessage());
+                exception.printStackTrace();
+                exception.replyError(responseObserver);
             } finally {
                 responseObserver.onCompleted();
             }
@@ -131,19 +136,18 @@ public class AdminPortalServer {
 
         @Override
         public void deleteClient(ID request, StreamObserver<Reply> responseObserver) {
+            logger.info("DELETAR " + request);
             try {
+                clientUpdaterMiddleware.deleteClient(request);
                 responseObserver.onNext(Reply.newBuilder()
                                                 .setError(ReplyNative.SUCESSO.getError())
                                                 .setDescription(ReplyNative.SUCESSO.getDescription())
                                                 .build());
-                throw new NotFoundItemInPortalException();
-            } catch (NotFoundItemInPortalException notFoundItemInDatabaseException) {
-                notFoundItemInDatabaseException.replyError(responseObserver);
-            } catch (Exception specificException) {
-                responseObserver.onNext(Reply.newBuilder()
-                                                .setError(ReplyNative.ERRO_PROTOCOLOS.getError())
-                                                .setDescription(ReplyNative.ERRO_PROTOCOLOS.getDescription())
-                                                .build());
+                logger.info("DELETADO: " + request);
+            } catch (PortalException exception) {
+                logger.info("NÃO FOI POSSÍVEL BUSCAR O CLIENTE " + request + " retornando nulo. " + exception.getMessage());
+                exception.printStackTrace();
+                exception.replyError(responseObserver);
             } finally {
                 responseObserver.onCompleted();
             }

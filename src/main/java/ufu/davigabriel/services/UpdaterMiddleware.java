@@ -6,21 +6,11 @@ import ufu.davigabriel.server.distributedDatabase.RatisClient;
 import java.io.IOException;
 
 public class UpdaterMiddleware {
-    private static UpdaterMiddleware instance;
     @Getter
     private RatisClient[] ratisClients;
 
     public UpdaterMiddleware() {
-        if (instance == null) {
-            this.ratisClients = new RatisClient[]{new RatisClient(0), new RatisClient(1)};
-        }
-    }
-
-    public static UpdaterMiddleware getInstance() {
-        if (instance == null) {
-            instance = new UpdaterMiddleware();
-        }
-        return instance;
+        this.ratisClients = new RatisClient[]{new RatisClient(0), new RatisClient(1)};
     }
 
     public void closeClients() throws IOException {

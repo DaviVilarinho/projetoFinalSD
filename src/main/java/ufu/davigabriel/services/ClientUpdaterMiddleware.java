@@ -11,10 +11,18 @@ import ufu.davigabriel.server.distributedDatabase.RatisClient;
 import java.nio.charset.Charset;
 
 public class ClientUpdaterMiddleware extends UpdaterMiddleware implements IClientProxyDatabase {
-    ClientCacheService clientCacheService = ClientCacheService.getInstance();
+    private static ClientUpdaterMiddleware instance;
+    private ClientCacheService clientCacheService = ClientCacheService.getInstance();
 
     private RatisClient getRatisClientFromClientCID(int cid) {
         return this.getRatisClients()[cid % 2];
+    }
+
+    public static ClientUpdaterMiddleware getInstance() {
+        if (instance == null){
+            instance = new ClientUpdaterMiddleware();
+        }
+        return instance;
     }
 
     private RatisClient getRatisClientFromClientCID(Client client) {
