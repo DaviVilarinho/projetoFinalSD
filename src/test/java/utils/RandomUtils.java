@@ -9,12 +9,13 @@ import ufu.davigabriel.models.ProductNative;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
+import java.util.concurrent.ThreadLocalRandom;
 import java.util.stream.Collectors;
 
 public class RandomUtils {
     public static ClientNative generateRandomClient() {
         return ClientNative.builder()
-                .CID(RandomString.make(32).strip().trim())
+                .CID(Integer.valueOf(Math.abs(ThreadLocalRandom.current().nextInt())).toString())
                 .name(RandomString.make(16))
                 .zipCode(RandomString.make(8))
                 .build();

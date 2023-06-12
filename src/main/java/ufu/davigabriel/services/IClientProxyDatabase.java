@@ -1,5 +1,6 @@
 package ufu.davigabriel.services;
 
+import ufu.davigabriel.exceptions.BadRequestException;
 import ufu.davigabriel.exceptions.DuplicatePortalItemException;
 import ufu.davigabriel.exceptions.NotFoundItemInPortalException;
 import ufu.davigabriel.exceptions.RatisClientException;
@@ -13,8 +14,8 @@ import ufu.davigabriel.server.Product;
  * Database: realizar mudanca
  */
 public interface IClientProxyDatabase {
-    void createClient(Client client) throws DuplicatePortalItemException, RatisClientException;
-    void updateClient(Client client) throws NotFoundItemInPortalException, RatisClientException;
-    Client retrieveClient(ID id) throws NotFoundItemInPortalException, RatisClientException;
-    void deleteClient(ID id) throws NotFoundItemInPortalException, RatisClientException;
+    void createClient(Client client) throws DuplicatePortalItemException, RatisClientException, BadRequestException;
+    void updateClient(Client client) throws NotFoundItemInPortalException, RatisClientException, BadRequestException;
+    Client retrieveClient(ID id) throws NotFoundItemInPortalException, RatisClientException, BadRequestException;
+    void deleteClient(ID id) throws NotFoundItemInPortalException, RatisClientException, BadRequestException;
 }

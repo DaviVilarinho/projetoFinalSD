@@ -39,7 +39,6 @@ public class AdminPortalServerTest {
                 grpcCleanup.register(InProcessChannelBuilder.forName(serverName).directExecutor().build()));
 
         Reply reply = blockingStub.createClient(clientThatShouldBeCreated);
-        Thread.sleep(TOLERANCE_MS);
         Client client = blockingStub.retrieveClient(ID.newBuilder().setID(clientThatShouldBeCreated.getCID()).build());
         Assert.assertEquals(clientThatShouldBeCreated, client);
         Assert.assertNotEquals(clientThatShouldNotBeCreated, client);
@@ -47,7 +46,6 @@ public class AdminPortalServerTest {
         Assert.assertNotEquals(clientThatShouldNotBeCreated, client);
         clientThatShouldBeCreated = clientThatShouldNotBeCreated;
         reply = blockingStub.createClient(clientThatShouldBeCreated);
-        Thread.sleep(TOLERANCE_MS);
         Assert.assertNotEquals(clientThatShouldBeCreated, client);
         client = blockingStub.retrieveClient(ID.newBuilder().setID(clientThatShouldBeCreated.getCID()).build());
         Assert.assertEquals(clientThatShouldBeCreated, client);
@@ -57,7 +55,6 @@ public class AdminPortalServerTest {
         clientNativeThatShouldBeUpdated.setZipCode("326432");
         reply = blockingStub.updateClient(clientNativeThatShouldBeUpdated.toClient());
         Assert.assertEquals(reply.getError(), ReplyNative.SUCESSO.getError());
-        Thread.sleep(TOLERANCE_MS);
         client = blockingStub.retrieveClient(ID.newBuilder().setID(clientNativeThatShouldBeUpdated.getCID()).build());
         Assert.assertEquals(clientNativeThatShouldBeUpdated.toClient(), client);
 

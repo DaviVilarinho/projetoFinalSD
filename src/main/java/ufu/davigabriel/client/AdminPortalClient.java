@@ -1,6 +1,5 @@
 package ufu.davigabriel.client;
 
-import io.grpc.Channel;
 import io.grpc.Grpc;
 import io.grpc.InsecureChannelCredentials;
 import io.grpc.ManagedChannel;
@@ -13,13 +12,13 @@ import ufu.davigabriel.server.*;
 import java.util.*;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.TimeUnit;
+import java.util.zip.CRC32;
 
 public class AdminPortalClient {
     public static String HOST = "127.0.0.1";
     public static int SERVER_PORT =
             AdminPortalServer.BASE_PORTAL_SERVER_PORT + new Random().nextInt(Main.PORTAL_SERVERS);
-    public static String TARGET_SERVER = String.format("%s:%d", HOST,
-            SERVER_PORT);
+    public static String TARGET_SERVER = String.format("%s:%d", HOST, SERVER_PORT);
     private static AdminPortalGrpc.AdminPortalBlockingStub blockingStub;
     private static final Scanner scanner = new Scanner(System.in);
 
@@ -190,7 +189,9 @@ public class AdminPortalClient {
     }
 
     static private String geraId(String nome) {
-        return String.valueOf(ThreadLocalRandom.current().nextInt(0, Integer.MAX_VALUE));
+        CRC32 crc32 = new CRC32();
+        crc32.update(nome.getBytes());
+        return Integer.valueOf(Math.abs((int) crc32.getValue())).toString();
     }
 
     static private ReplyNative createClient(AdminPortalGrpc.AdminPortalBlockingStub blockingStub, ClientNative clientNative) {

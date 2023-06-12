@@ -14,7 +14,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
 
 public class RatisClient {
-    private final int partitionPeer;
+    private int partitionPeer;
     private final RaftClient client;
 
     public RatisClient(int partitionPeer) {
