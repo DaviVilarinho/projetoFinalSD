@@ -6,7 +6,6 @@ import ufu.davigabriel.exceptions.RatisClientException;
 import ufu.davigabriel.models.ClientNative;
 import ufu.davigabriel.server.Client;
 import ufu.davigabriel.server.ID;
-import ufu.davigabriel.server.distributedDatabase.RatisClient;
 
 import java.nio.charset.Charset;
 
@@ -14,19 +13,11 @@ public class ClientUpdaterMiddleware extends UpdaterMiddleware implements IClien
     private static ClientUpdaterMiddleware instance;
     private ClientCacheService clientCacheService = ClientCacheService.getInstance();
 
-    private RatisClient getRatisClientFromClientCID(int cid) {
-        return this.getRatisClients()[cid % 2];
-    }
-
     public static ClientUpdaterMiddleware getInstance() {
         if (instance == null){
             instance = new ClientUpdaterMiddleware();
         }
         return instance;
-    }
-
-    private RatisClient getRatisClientFromClientCID(Client client) {
-        return getRatisClientFromClientCID(Integer.parseInt(client.getCID()));
     }
 
     public String getClientStorePath(Client client) {
@@ -43,7 +34,7 @@ public class ClientUpdaterMiddleware extends UpdaterMiddleware implements IClien
         if (clientCacheService.hasClient(client)) {
             throw new DuplicatePortalItemException("Usuário já existe: " + client.toString());
         }
-        getRatisClientFromClientCID(client).add(getClientStorePath(client),
+        getRatisClientFromID(client.getCID()).add(getClientStorePath(client),
                                                 ClientNative.fromClient(client).toJson());
         clientCacheService.createClient(client);
     }
@@ -51,23 +42,23 @@ public class ClientUpdaterMiddleware extends UpdaterMiddleware implements IClien
     @Override
     public void updateClient(Client client) throws NotFoundItemInPortalException, RatisClientException {
         if (!clientCacheService.hasClient(client)) {
-            getClient(client); // TODO avaliar se está lançando o NOTFOUND
+            retrieveClient(client); // TODO avaliar se está lançando o NOTFOUND
         }
-        clientCacheService.updateClient(ClientNative.fromJson(getRatisClientFromClientCID(client).update(
+        clientCacheService.updateClient(ClientNative.fromJson(getRatisClientFromID(client.getCID()).update(
                 getClientStorePath(client), client.toString()).getMessage().getContent().toString(
                 Charset.defaultCharset())).toClient()); // TODO avaliar get nulo
     }
 
-    public Client getClient(Client client) throws NotFoundItemInPortalException, RatisClientException {
-        return getClient(ID.newBuilder().setID(client.getCID()).build());
+    public Client retrieveClient(Client client) throws NotFoundItemInPortalException, RatisClientException {
+        return retrieveClient(ID.newBuilder().setID(client.getCID()).build());
     }
 
     @Override
-    public Client getClient(ID id) throws NotFoundItemInPortalException, RatisClientException {
+    public Client retrieveClient(ID id) throws NotFoundItemInPortalException, RatisClientException {
         try {
-            return clientCacheService.getClient(id);
+            return clientCacheService.retrieveClient(id);
         } catch (NotFoundItemInPortalException notFoundItemInPortalException) {
-            Client client = ClientNative.fromJson(getRatisClientFromClientCID(Integer.parseInt(id.getID())).get(
+            Client client = ClientNative.fromJson(getRatisClientFromID(id.getID()).get(
                     getStorePath(id.getID())).getMessage().getContent().toString(
                     Charset.defaultCharset())).toClient(); // TODO avaliar get nulo
             try {
@@ -83,11 +74,11 @@ public class ClientUpdaterMiddleware extends UpdaterMiddleware implements IClien
     @Override
     public void deleteClient(ID id) throws NotFoundItemInPortalException, RatisClientException {
         if (!clientCacheService.hasClient(id.getID())) {
-            getClient(id); // TODO avaliar se está lançando o NOTFOUND
+            retrieveClient(id); // TODO avaliar se está lançando o NOTFOUND
         }
-        clientCacheService.deleteClient(ClientNative.fromJson(
-                getRatisClientFromClientCID(Integer.parseInt(id.getID())).del(
+        clientCacheService.deleteClient(ID.newBuilder().setID(ClientNative.fromJson(
+                getRatisClientFromID(id.getID()).del(
                         getStorePath(id.getID().toString())).getMessage().getContent().toString(
-                        Charset.defaultCharset())).toClient().getCID()); // TODO avaliar get nulo
+                        Charset.defaultCharset())).getCID()).build()); // TODO avaliar get nulo
     }
 }

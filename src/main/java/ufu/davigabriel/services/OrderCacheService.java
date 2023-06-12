@@ -2,7 +2,9 @@ package ufu.davigabriel.services;
 
 import ufu.davigabriel.exceptions.DuplicatePortalItemException;
 import ufu.davigabriel.exceptions.NotFoundItemInPortalException;
+import ufu.davigabriel.exceptions.RatisClientException;
 import ufu.davigabriel.models.OrderNative;
+import ufu.davigabriel.server.Client;
 import ufu.davigabriel.server.ID;
 import ufu.davigabriel.server.Order;
 
@@ -52,7 +54,7 @@ public class OrderCacheService implements IOrderProxyDatabase {
         ordersMap.forEach((s, orderNative) -> System.out.println(orderNative));
     }
 
-    public void createOrder(OrderNative orderNative) throws DuplicatePortalItemException {
+    private void createOrder(OrderNative orderNative) throws DuplicatePortalItemException {
         if (hasOrder(orderNative.getOID()))
             throw new DuplicatePortalItemException();
         ordersMap.put(orderNative.getOID(), orderNative.toJson());
@@ -63,16 +65,16 @@ public class OrderCacheService implements IOrderProxyDatabase {
         createOrder(OrderNative.fromOrder(order));
     }
 
-    public OrderNative retrieveOrder(String id) throws NotFoundItemInPortalException {
+    private OrderNative retrieveOrder(String id) throws NotFoundItemInPortalException {
         if (!hasOrder(id)) throw new NotFoundItemInPortalException();
         return OrderNative.fromJson(ordersMap.get(id));
     }
 
-    public OrderNative retrieveOrder(ID id) throws NotFoundItemInPortalException {
-        return retrieveOrder(id.getID());
+    public Order retrieveOrder(ID id) throws NotFoundItemInPortalException {
+        return retrieveOrder(id.getID()).toOrder();
     }
 
-    public void updateOrder(OrderNative orderNative) throws NotFoundItemInPortalException {
+    private void updateOrder(OrderNative orderNative) throws NotFoundItemInPortalException {
         if (!hasOrder(orderNative.getOID()))
             throw new NotFoundItemInPortalException();
         ordersMap.put(orderNative.getOID(), orderNative.toJson());
@@ -82,7 +84,7 @@ public class OrderCacheService implements IOrderProxyDatabase {
         updateOrder(OrderNative.fromOrder(order));
     }
 
-    public void deleteOrder(String id) throws NotFoundItemInPortalException {
+    private void deleteOrder(String id) throws NotFoundItemInPortalException {
         if (!hasOrder(id)) throw new NotFoundItemInPortalException();
         OrderNative removedOrder = OrderNative.fromJson(ordersMap.remove(id));
         removeClientOrderId(removedOrder.getCID(), removedOrder.getOID());
@@ -92,17 +94,19 @@ public class OrderCacheService implements IOrderProxyDatabase {
         deleteOrder(id.getID());
     }
 
-    public ArrayList<OrderNative> retrieveClientOrders(ID id) throws NotFoundItemInPortalException {
+    public ArrayList<Order> retrieveClientOrders(ID id) throws NotFoundItemInPortalException {
         if (!hasClient(id.getID())) throw new NotFoundItemInPortalException();
         return new ArrayList<>(clientOrdersMap
                 .get(id.getID())
-                .stream().map(orderIdFromClient -> OrderNative.fromJson(ordersMap.get(orderIdFromClient)))
+                .stream().map(orderIdFromClient -> OrderNative.fromJson(ordersMap.get(orderIdFromClient)).toOrder())
                 .toList());
     }
 
     public boolean hasOrder(String id) {
         return ordersMap.containsKey(id);
     }
+
+    public boolean hasOrder(Order order) { return hasOrder(order.getOID()); }
 
     public boolean hasClient(String id) {
         return clientOrdersMap.containsKey(id);

@@ -7,12 +7,15 @@ import io.grpc.stub.StreamObserver;
 import ufu.davigabriel.exceptions.*;
 import ufu.davigabriel.models.OrderNative;
 import ufu.davigabriel.models.ReplyNative;
-import ufu.davigabriel.services.OrderCacheService;
+import ufu.davigabriel.services.OrderUpdaterMiddleware;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.util.concurrent.TimeUnit;
 
 public class OrderPortalServer {
+    private static Logger logger = LoggerFactory.getLogger(AdminPortalServer.class);
     private Server server;
     public static int BASE_PORTAL_SERVER_PORT = 60552;
 
@@ -73,24 +76,23 @@ public class OrderPortalServer {
     }
 
     static public class OrderPortalImpl extends OrderPortalGrpc.OrderPortalImplBase {
-
-        private final OrderCacheService orderCacheService = OrderCacheService.getInstance();
+        private OrderUpdaterMiddleware orderUpdaterMiddleware = OrderUpdaterMiddleware.getInstance();
 
         @Override
         public void createOrder(Order request, StreamObserver<Reply> responseObserver) {
+            logger.info("CRIAR PEDIDO " + request.toString());
             try {
+                orderUpdaterMiddleware.createOrder(request);
                 responseObserver.onNext(Reply.newBuilder()
-                        .setError(ReplyNative.SUCESSO.getError())
-                        .setDescription(ReplyNative.SUCESSO.getDescription())
-                        .build());
-                throw new NotFoundItemInPortalException();
+                                                .setError(ReplyNative.SUCESSO.getError())
+                                                .setDescription(ReplyNative.SUCESSO.getDescription())
+                                                .build());
+                logger.info("PEDIDO CRIADO");
             } catch (PortalException exception) {
+                logger.error("NÃO FOI POSSÍVEL CRIAR O PEDIDO " + request + "retornando nulo.\n " + exception.getMessage() +
+                                     "\n" + exception.getStackTrace().toString());
+                exception.printStackTrace();
                 exception.replyError(responseObserver);
-            } catch (Exception e) {
-                responseObserver.onNext(Reply.newBuilder()
-                        .setError(ReplyNative.ERRO_PROTOCOLOS.getError())
-                        .setDescription(ReplyNative.ERRO_PROTOCOLOS.getDescription())
-                        .build());
             } finally {
                 responseObserver.onCompleted();
             }
@@ -98,9 +100,13 @@ public class OrderPortalServer {
 
         @Override
         public void retrieveOrder(ID request, StreamObserver<Order> responseObserver) {
+            logger.info("BUSCAR PEDIDO " + request.toString());
             try {
-                responseObserver.onNext(orderCacheService.retrieveOrder(request).toOrder());
-            } catch (NotFoundItemInPortalException exception) {
+                responseObserver.onNext(orderUpdaterMiddleware.retrieveOrder(request));
+                logger.debug("PEDIDO RETORNADO COM SUCESSO");
+            } catch (PortalException exception) {
+                logger.info("NÃO FOI POSSÍVEL BUSCAR O PEDIDO " + request + " retornando nulo. " + exception.getMessage());
+                exception.printStackTrace();
                 responseObserver.onNext(OrderNative.generateEmptyOrderNative().toOrder());
             } finally {
                 responseObserver.onCompleted();
@@ -109,19 +115,18 @@ public class OrderPortalServer {
 
         @Override
         public void updateOrder(Order request, StreamObserver<Reply> responseObserver) {
+            logger.info("DAR UPDATE EM PEDIDO " + request);
             try {
+                orderUpdaterMiddleware.updateOrder(request);
                 responseObserver.onNext(Reply.newBuilder()
-                        .setError(ReplyNative.SUCESSO.getError())
-                        .setDescription(ReplyNative.SUCESSO.getDescription())
-                        .build());
-                throw new NotFoundItemInPortalException();
+                                                .setError(ReplyNative.SUCESSO.getError())
+                                                .setDescription(ReplyNative.SUCESSO.getDescription())
+                                                .build());
+                logger.info("UPDATE CONCLUÍDO COM SUCESSO");
             } catch (PortalException exception) {
+                logger.info("NÃO FOI POSSÍVEL ATUALIZAR O PEDIDO " + request + exception.getMessage());
+                exception.printStackTrace();
                 exception.replyError(responseObserver);
-            } catch (Exception e) {
-                responseObserver.onNext(Reply.newBuilder()
-                        .setError(ReplyNative.ERRO_PROTOCOLOS.getError())
-                        .setDescription(ReplyNative.ERRO_PROTOCOLOS.getDescription())
-                        .build());
             } finally {
                 responseObserver.onCompleted();
             }
@@ -129,19 +134,18 @@ public class OrderPortalServer {
 
         @Override
         public void deleteOrder(ID request, StreamObserver<Reply> responseObserver) {
+            logger.info("DELETAR " + request);
             try {
+                orderUpdaterMiddleware.deleteOrder(request);
                 responseObserver.onNext(Reply.newBuilder()
-                        .setError(ReplyNative.SUCESSO.getError())
-                        .setDescription(ReplyNative.SUCESSO.getDescription())
-                        .build());
-                throw new NotFoundItemInPortalException();
+                                                .setError(ReplyNative.SUCESSO.getError())
+                                                .setDescription(ReplyNative.SUCESSO.getDescription())
+                                                .build());
+                logger.info("DELETADO: " + request);
             } catch (PortalException exception) {
+                logger.info("NÃO FOI POSSÍVEL DELETAR O PEDIDO " + request + " retornando nulo. " + exception.getMessage());
+                exception.printStackTrace();
                 exception.replyError(responseObserver);
-            } catch (Exception e) {
-                responseObserver.onNext(Reply.newBuilder()
-                        .setError(ReplyNative.ERRO_PROTOCOLOS.getError())
-                        .setDescription(ReplyNative.ERRO_PROTOCOLOS.getDescription())
-                        .build());
             } finally {
                 responseObserver.onCompleted();
             }
@@ -149,16 +153,7 @@ public class OrderPortalServer {
 
         @Override
         public void retrieveClientOrders(ID request, StreamObserver<Order> responseObserver) {
-            try {
-                orderCacheService.retrieveClientOrders(request).forEach((order) -> {
-                    responseObserver.onNext(order.toOrder());
-                });
-                throw new NotFoundItemInPortalException();
-            } catch (PortalException e) {
-                e.replyError(responseObserver);
-            } finally {
-                responseObserver.onCompleted();
-            }
+            //TODO
         }
     }
 

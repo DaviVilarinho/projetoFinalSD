@@ -1,7 +1,6 @@
 package ufu.davigabriel.models;
 
 import com.google.gson.Gson;
-import com.google.gson.annotations.JsonAdapter;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.Setter;

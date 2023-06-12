@@ -1,11 +1,11 @@
 package ufu.davigabriel.services;
 
-import ufu.davigabriel.exceptions.BadRequestException;
-import ufu.davigabriel.exceptions.DuplicatePortalItemException;
-import ufu.davigabriel.exceptions.NotFoundItemInPortalException;
-import ufu.davigabriel.exceptions.UnauthorizedUserException;
+import ufu.davigabriel.exceptions.*;
+import ufu.davigabriel.server.Client;
 import ufu.davigabriel.server.ID;
 import ufu.davigabriel.server.Order;
+
+import java.util.ArrayList;
 
 /**
  * O Middleware e a Database fazem uso desta interface para redirecionar as atribuicoes de cada
@@ -13,7 +13,9 @@ import ufu.davigabriel.server.Order;
  * Database: realizar mudanca
  */
 public interface IOrderProxyDatabase {
-    void createOrder(Order order) throws DuplicatePortalItemException, Exception, UnauthorizedUserException, NotFoundItemInPortalException, BadRequestException;
-    void updateOrder(Order order) throws NotFoundItemInPortalException, Exception, UnauthorizedUserException, BadRequestException;
-    void deleteOrder(ID id) throws NotFoundItemInPortalException, Exception;
+    void createOrder(Order order) throws DuplicatePortalItemException, RatisClientException;
+    void updateOrder(Order order) throws NotFoundItemInPortalException, RatisClientException;
+    void deleteOrder(ID id) throws NotFoundItemInPortalException, RatisClientException;
+    Order retrieveOrder(ID id) throws NotFoundItemInPortalException, RatisClientException;
+    ArrayList<Order> retrieveClientOrders(ID id) throws NotFoundItemInPortalException, RatisClientException;
 }

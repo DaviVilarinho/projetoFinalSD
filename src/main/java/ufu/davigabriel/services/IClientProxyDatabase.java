@@ -15,7 +15,6 @@ import ufu.davigabriel.server.Product;
 public interface IClientProxyDatabase {
     void createClient(Client client) throws DuplicatePortalItemException, RatisClientException;
     void updateClient(Client client) throws NotFoundItemInPortalException, RatisClientException;
-
-    Client getClient(ID id) throws NotFoundItemInPortalException, RatisClientException;
+    Client retrieveClient(ID id) throws NotFoundItemInPortalException, RatisClientException;
     void deleteClient(ID id) throws NotFoundItemInPortalException, RatisClientException;
 }

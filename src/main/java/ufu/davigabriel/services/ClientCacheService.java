@@ -51,18 +51,19 @@ public class ClientCacheService implements IClientProxyDatabase {
         createClient(ClientNative.fromClient(client));
     }
 
-    public void createClient(ClientNative clientNative) throws DuplicatePortalItemException {
+    private void createClient(ClientNative clientNative) throws DuplicatePortalItemException {
         if (hasClient(clientNative.getCID()))
             throw new DuplicatePortalItemException();
 
         clientsMap.putIfAbsent(clientNative.getCID(), clientNative.toJson());
     }
 
-    public ClientNative retrieveClient(ID id) throws NotFoundItemInPortalException {
-        return retrieveClient(id.getID());
+
+    public Client retrieveClient(ID id) throws NotFoundItemInPortalException {
+        return retrieveClient(id.getID()).toClient();
     }
 
-    public ClientNative retrieveClient(String id) throws NotFoundItemInPortalException {
+    private ClientNative retrieveClient(String id) throws NotFoundItemInPortalException {
         if (!hasClient(id)) throw new NotFoundItemInPortalException();
         return ClientNative.fromJson(clientsMap.get(id));
     }
@@ -71,7 +72,7 @@ public class ClientCacheService implements IClientProxyDatabase {
         updateClient(ClientNative.fromClient(client));
     }
 
-    public void updateClient(ClientNative clientNative) throws NotFoundItemInPortalException {
+    private void updateClient(ClientNative clientNative) throws NotFoundItemInPortalException {
         if (!hasClient(clientNative.getCID())) throw new NotFoundItemInPortalException();
         clientsMap.put(clientNative.getCID(), clientNative.toJson());
     }
@@ -81,16 +82,11 @@ public class ClientCacheService implements IClientProxyDatabase {
         deleteClient(id.getID());
     }
 
-    public void deleteClient(String id) throws NotFoundItemInPortalException {
+    private void deleteClient(String id) throws NotFoundItemInPortalException {
         if (!hasClient(id)) throw new NotFoundItemInPortalException();
         clientsMap.remove(id);
     }
 
     public boolean hasClient(String id) { return clientsMap.containsKey(id); }
-    public boolean hasClient(Client client) { return clientsMap.containsKey(client.getCID()); }
-
-    @Override
-    public Client getClient(ID id) throws NotFoundItemInPortalException {
-        return retrieveClient(id).toClient();
-    }
+    public boolean hasClient(Client client) { return hasClient(client.getCID()); }
 }

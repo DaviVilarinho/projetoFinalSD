@@ -51,18 +51,18 @@ public class ProductCacheService implements IProductProxyDatabase {
         createProduct(ProductNative.fromProduct(product));
     }
 
-    public void createProduct(ProductNative productNative) throws DuplicatePortalItemException {
+    private void createProduct(ProductNative productNative) throws DuplicatePortalItemException {
         if (hasProduct(productNative.getPID()))
             throw new DuplicatePortalItemException();
 
         productsMap.putIfAbsent(productNative.getPID(), productNative.toJson());
     }
 
-    public ProductNative retrieveProduct(ID id) throws NotFoundItemInPortalException {
-        return retrieveProduct(id.getID());
+    public Product retrieveProduct(ID id) throws NotFoundItemInPortalException {
+        return retrieveProduct(id.getID()).toProduct();
     }
 
-    public ProductNative retrieveProduct(String id) throws NotFoundItemInPortalException {
+    private ProductNative retrieveProduct(String id) throws NotFoundItemInPortalException {
         if (!hasProduct(id)) throw new NotFoundItemInPortalException();
         return ProductNative.fromJson(productsMap.get(id));
     }
@@ -71,7 +71,7 @@ public class ProductCacheService implements IProductProxyDatabase {
         updateProduct(ProductNative.fromProduct(product));
     }
 
-    public void updateProduct(ProductNative productNative) throws NotFoundItemInPortalException {
+    private void updateProduct(ProductNative productNative) throws NotFoundItemInPortalException {
         if (!hasProduct(productNative.getPID())) throw new NotFoundItemInPortalException();
         productsMap.put(productNative.getPID(), productNative.toJson());
     }
@@ -80,10 +80,12 @@ public class ProductCacheService implements IProductProxyDatabase {
         deleteProduct(id.getID());
     }
 
-    public void deleteProduct(String id) throws NotFoundItemInPortalException {
+    private void deleteProduct(String id) throws NotFoundItemInPortalException {
         if (!hasProduct(id)) throw new NotFoundItemInPortalException();
         productsMap.remove(id);
     }
 
     public boolean hasProduct(String id) { return productsMap.containsKey(id); }
+
+    public boolean hasProduct(Product product) { return hasProduct(product.getPID()); }
 }

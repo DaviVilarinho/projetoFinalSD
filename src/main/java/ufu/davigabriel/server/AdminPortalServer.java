@@ -6,16 +6,13 @@ import io.grpc.Server;
 import io.grpc.stub.StreamObserver;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import ufu.davigabriel.exceptions.DuplicatePortalItemException;
-import ufu.davigabriel.exceptions.NotFoundItemInPortalException;
 import ufu.davigabriel.exceptions.PortalException;
 import ufu.davigabriel.models.ClientNative;
 import ufu.davigabriel.models.ProductNative;
 import ufu.davigabriel.models.ReplyNative;
 import ufu.davigabriel.services.ClientUpdaterMiddleware;
-import ufu.davigabriel.services.ProductCacheService;
+import ufu.davigabriel.services.ProductUpdaterMiddleware;
 
-import javax.sound.sampled.Port;
 import java.io.IOException;
 import java.util.concurrent.TimeUnit;
 
@@ -78,8 +75,8 @@ public class AdminPortalServer {
     }
 
     static public class AdminPortalImpl extends AdminPortalGrpc.AdminPortalImplBase {
-        private ProductCacheService productCacheService = ProductCacheService.getInstance();
         private ClientUpdaterMiddleware clientUpdaterMiddleware = ClientUpdaterMiddleware.getInstance();
+        private ProductUpdaterMiddleware productUpdaterMiddleware = ProductUpdaterMiddleware.getInstance();
 
         @Override
         public void createClient(Client request, StreamObserver<Reply> responseObserver) {
@@ -92,8 +89,9 @@ public class AdminPortalServer {
                                                 .build());
                 logger.info("CLIENTE CRIADO");
             } catch (PortalException exception) {
-                logger.error("REQUISICAO DE CLIENTE " + request + "NAO CRIADO.\n " + exception.getMessage() +
+                logger.error("NÃO FOI POSSÍVEL CRIAR O CLIENTE " + request + "retornando nulo.\n " + exception.getMessage() +
                                      "\n" + exception.getStackTrace().toString());
+                exception.printStackTrace();
                 exception.replyError(responseObserver);
             } finally {
                 responseObserver.onCompleted();
@@ -104,7 +102,7 @@ public class AdminPortalServer {
         public void retrieveClient(ID request, StreamObserver<Client> responseObserver) {
             logger.info("BUSCAR CLIENTE " + request.toString());
             try {
-                responseObserver.onNext(clientUpdaterMiddleware.getClient(request));
+                responseObserver.onNext(clientUpdaterMiddleware.retrieveClient(request));
                 logger.debug("CLIENTE RETORNADO COM SUCESSO");
             } catch (PortalException exception) {
                 logger.info("NÃO FOI POSSÍVEL BUSCAR O CLIENTE " + request + " retornando nulo. " + exception.getMessage());
@@ -145,7 +143,7 @@ public class AdminPortalServer {
                                                 .build());
                 logger.info("DELETADO: " + request);
             } catch (PortalException exception) {
-                logger.info("NÃO FOI POSSÍVEL BUSCAR O CLIENTE " + request + " retornando nulo. " + exception.getMessage());
+                logger.info("NÃO FOI POSSÍVEL DELETAR O CLIENTE " + request + " retornando nulo. " + exception.getMessage());
                 exception.printStackTrace();
                 exception.replyError(responseObserver);
             } finally {
@@ -155,19 +153,19 @@ public class AdminPortalServer {
 
         @Override
         public void createProduct(Product request, StreamObserver<Reply> responseObserver) {
+            logger.info("CRIAR PRODUTO " + request.toString());
             try {
+                productUpdaterMiddleware.createProduct(request);
                 responseObserver.onNext(Reply.newBuilder()
                                                 .setError(ReplyNative.SUCESSO.getError())
                                                 .setDescription(ReplyNative.SUCESSO.getDescription())
                                                 .build());
-                throw new DuplicatePortalItemException();
-            } catch (DuplicatePortalItemException e) {
-                e.replyError(responseObserver);
-            } catch (Exception specificException) {
-                responseObserver.onNext(Reply.newBuilder()
-                                                .setError(ReplyNative.ERRO_PROTOCOLOS.getError())
-                                                .setDescription(ReplyNative.ERRO_PROTOCOLOS.getDescription())
-                                                .build());
+                logger.info("PRODUTO CRIADO");
+            } catch (PortalException exception) {
+                logger.error("NÃO FOI POSSÍVEL CRIAR O PRODUTO " + request + "retornando nulo.\n " + exception.getMessage() +
+                                     "\n" + exception.getStackTrace().toString());
+                exception.printStackTrace();
+                exception.replyError(responseObserver);
             } finally {
                 responseObserver.onCompleted();
             }
@@ -175,10 +173,13 @@ public class AdminPortalServer {
 
         @Override
         public void retrieveProduct(ID request, StreamObserver<Product> responseObserver) {
+            logger.info("BUSCAR PRODUTO " + request.toString());
             try {
-                responseObserver.onNext(productCacheService.retrieveProduct(request).toProduct());
-                throw new NotFoundItemInPortalException();
-            } catch (NotFoundItemInPortalException exception) {
+                responseObserver.onNext(productUpdaterMiddleware.retrieveProduct(request));
+                logger.debug("PRODUTO RETORNADO COM SUCESSO");
+            } catch (PortalException exception) {
+                logger.info("NÃO FOI POSSÍVEL BUSCAR O PRODUTO " + request + " retornando nulo. " + exception.getMessage());
+                exception.printStackTrace();
                 responseObserver.onNext(ProductNative.generateEmptyProductNative().toProduct());
             } finally {
                 responseObserver.onCompleted();
@@ -187,19 +188,18 @@ public class AdminPortalServer {
 
         @Override
         public void updateProduct(Product request, StreamObserver<Reply> responseObserver) {
+            logger.info("DAR UPDATE EM PRODUTO " + request);
             try {
+                productUpdaterMiddleware.updateProduct(request);
                 responseObserver.onNext(Reply.newBuilder()
                                                 .setError(ReplyNative.SUCESSO.getError())
                                                 .setDescription(ReplyNative.SUCESSO.getDescription())
                                                 .build());
-                throw new NotFoundItemInPortalException();
-            } catch (NotFoundItemInPortalException e) {
-                e.replyError(responseObserver);
-            } catch (Exception specificException) {
-                responseObserver.onNext(Reply.newBuilder()
-                                                .setError(ReplyNative.ERRO_PROTOCOLOS.getError())
-                                                .setDescription(ReplyNative.ERRO_PROTOCOLOS.getDescription())
-                                                .build());
+                logger.info("UPDATE CONCLUÍDO COM SUCESSO");
+            } catch (PortalException exception) {
+                logger.info("NÃO FOI POSSÍVEL ATUALIZAR O PRODUTO " + request + exception.getMessage());
+                exception.printStackTrace();
+                exception.replyError(responseObserver);
             } finally {
                 responseObserver.onCompleted();
             }
@@ -207,19 +207,18 @@ public class AdminPortalServer {
 
         @Override
         public void deleteProduct(ID request, StreamObserver<Reply> responseObserver) {
+            logger.info("DELETAR " + request);
             try {
+                productUpdaterMiddleware.deleteProduct(request);
                 responseObserver.onNext(Reply.newBuilder()
                                                 .setError(ReplyNative.SUCESSO.getError())
                                                 .setDescription(ReplyNative.SUCESSO.getDescription())
                                                 .build());
-                throw new NotFoundItemInPortalException();
-            } catch (NotFoundItemInPortalException e) {
-                e.replyError(responseObserver);
-            } catch (Exception specificException) {
-                responseObserver.onNext(Reply.newBuilder()
-                                                .setError(ReplyNative.ERRO_PROTOCOLOS.getError())
-                                                .setDescription(ReplyNative.ERRO_PROTOCOLOS.getDescription())
-                                                .build());
+                logger.info("DELETADO: " + request);
+            } catch (PortalException exception) {
+                logger.info("NÃO FOI POSSÍVEL DELETAR O PRODUTO " + request + " retornando nulo. " + exception.getMessage());
+                exception.printStackTrace();
+                exception.replyError(responseObserver);
             } finally {
                 responseObserver.onCompleted();
             }

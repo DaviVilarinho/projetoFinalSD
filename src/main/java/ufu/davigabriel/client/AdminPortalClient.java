@@ -14,7 +14,7 @@ import java.util.*;
 import java.util.concurrent.TimeUnit;
 
 public class AdminPortalClient {
-    public static String HOST = "localhost";
+    public static String HOST = "127.0.0.1";
     public static int SERVER_PORT =
             AdminPortalServer.BASE_PORTAL_SERVER_PORT + new Random().nextInt(Main.PORTAL_SERVERS);
     public static String TARGET_SERVER = String.format("%s:%d", HOST,

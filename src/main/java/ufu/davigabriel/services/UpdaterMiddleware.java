@@ -1,6 +1,7 @@
 package ufu.davigabriel.services;
 
 import lombok.Getter;
+import ufu.davigabriel.server.ID;
 import ufu.davigabriel.server.distributedDatabase.RatisClient;
 
 import java.io.IOException;
@@ -26,4 +27,5 @@ public class UpdaterMiddleware {
     public String getStorePath(String id) {
         return getSelfSavePath() + id;
     }
+    protected RatisClient getRatisClientFromID(String id) { return this.ratisClients[Integer.parseInt(id)]; }
 }
