@@ -27,5 +27,5 @@ public class UpdaterMiddleware {
     public String getStorePath(String id) {
         return getSelfSavePath() + id;
     }
-    protected RatisClient getRatisClientFromID(String id) { return this.ratisClients[Integer.parseInt(id)]; }
+    protected RatisClient getRatisClientFromID(String id) { return this.ratisClients[Integer.parseInt(id) % 2]; }
 }

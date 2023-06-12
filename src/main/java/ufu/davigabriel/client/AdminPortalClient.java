@@ -11,6 +11,7 @@ import ufu.davigabriel.models.ReplyNative;
 import ufu.davigabriel.server.*;
 
 import java.util.*;
+import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.TimeUnit;
 
 public class AdminPortalClient {
@@ -189,7 +190,7 @@ public class AdminPortalClient {
     }
 
     static private String geraId(String nome) {
-        return Base64.getEncoder().encodeToString(nome.getBytes());
+        return String.valueOf(ThreadLocalRandom.current().nextInt(0, Integer.MAX_VALUE));
     }
 
     static private ReplyNative createClient(AdminPortalGrpc.AdminPortalBlockingStub blockingStub, ClientNative clientNative) {
