@@ -36,7 +36,7 @@ OrderPortalServer dependem, em partes, das funcionalidades do AdminPortalServer.
 @Ignore
 public class OrderPortalServerTest {
 
-    public static int TOLERANCE_MS = 1000;
+    public static int TOLERANCE_MS = 100;
 
     public OrderPortalGrpc.OrderPortalBlockingStub getOrderBlockingStub() {
         return OrderPortalGrpc.newBlockingStub(Grpc.newChannelBuilder(OrderPortalClient.TARGET_SERVER, InsecureChannelCredentials.create()).build());

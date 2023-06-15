@@ -101,6 +101,7 @@ public class ProductUpdaterMiddleware extends UpdaterMiddleware implements IProd
 
     @Override
     public void deleteProduct(ID id) throws NotFoundItemInPortalException, RatisClientException, BadRequestException {
+
         if (!productCacheService.hasProduct(id.getID())) {
             retrieveProduct(id);
         }

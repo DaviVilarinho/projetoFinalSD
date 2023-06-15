@@ -2,9 +2,7 @@ package ufu.davigabriel.services;
 
 import ufu.davigabriel.exceptions.DuplicatePortalItemException;
 import ufu.davigabriel.exceptions.NotFoundItemInPortalException;
-import ufu.davigabriel.exceptions.RatisClientException;
 import ufu.davigabriel.models.OrderNative;
-import ufu.davigabriel.server.Client;
 import ufu.davigabriel.server.ID;
 import ufu.davigabriel.server.Order;
 
@@ -102,6 +100,11 @@ public class OrderCacheService implements IOrderProxyDatabase {
                 .toList());
     }
 
+    public ArrayList<String> retrieveClientOrdersIds(ID id) throws NotFoundItemInPortalException {
+        if (!hasClient(id.getID())) throw new NotFoundItemInPortalException();
+        return new ArrayList<>(clientOrdersMap.get(id.getID()));
+    }
+
     public boolean hasOrder(String id) {
         return ordersMap.containsKey(id);
     }
@@ -112,11 +115,25 @@ public class OrderCacheService implements IOrderProxyDatabase {
         return clientOrdersMap.containsKey(id);
     }
 
+    public void addClientOrderId(ID clientID, ID orderID) {
+        addClientOrderId(clientID.getID(), orderID.getID());
+    }
+
+    public void updateClientOrders(String clientId, ArrayList<String> clientOrdersIds)  {
+        clientOrdersMap.put(clientId, clientOrdersIds);
+    }
+
+    @Override
     public void addClientOrderId(String clientId, String orderId) {
         clientOrdersMap.putIfAbsent(clientId, new ArrayList<>());
         clientOrdersMap.get(clientId).add(orderId);
     }
 
+    public void removeClientOrderId(ID clientID, ID orderID) {
+        removeClientOrderId(clientID.getID(), orderID.getID());
+    }
+
+    @Override
     public void removeClientOrderId(String clientId, String orderId) {
         clientOrdersMap.put(clientId,
                 clientOrdersMap.get(clientId).stream()

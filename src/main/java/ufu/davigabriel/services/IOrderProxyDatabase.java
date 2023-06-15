@@ -13,9 +13,13 @@ import java.util.ArrayList;
  * Database: realizar mudanca
  */
 public interface IOrderProxyDatabase {
-    void createOrder(Order order) throws DuplicatePortalItemException, RatisClientException;
-    void updateOrder(Order order) throws NotFoundItemInPortalException, RatisClientException;
-    void deleteOrder(ID id) throws NotFoundItemInPortalException, RatisClientException;
-    Order retrieveOrder(ID id) throws NotFoundItemInPortalException, RatisClientException;
-    ArrayList<Order> retrieveClientOrders(ID id) throws NotFoundItemInPortalException, RatisClientException;
+    void createOrder(Order order) throws DuplicatePortalItemException, RatisClientException, BadRequestException;
+    void updateOrder(Order order) throws NotFoundItemInPortalException, RatisClientException, BadRequestException;
+    void deleteOrder(ID id) throws NotFoundItemInPortalException, RatisClientException, BadRequestException;
+    Order retrieveOrder(ID id) throws NotFoundItemInPortalException, RatisClientException, BadRequestException;
+    ArrayList<Order> retrieveClientOrders(ID id) throws NotFoundItemInPortalException, RatisClientException, BadRequestException;
+
+    void addClientOrderId(String clientId, String orderId) throws RatisClientException;
+
+    void removeClientOrderId(String clientId, String orderId) throws RatisClientException, BadRequestException;
 }
