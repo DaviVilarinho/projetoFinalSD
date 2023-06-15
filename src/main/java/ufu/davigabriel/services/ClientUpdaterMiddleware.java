@@ -52,12 +52,15 @@ public class ClientUpdaterMiddleware extends UpdaterMiddleware implements IClien
     @Override
     public void updateClient(Client client) throws NotFoundItemInPortalException, RatisClientException, BadRequestException {
         if (!clientCacheService.hasClient(client)) {
-            retrieveClient(client); // TODO avaliar se está lançando o NOTFOUND
+            retrieveClient(client);
         }
         try {
-            clientCacheService.updateClient(ClientNative.fromJson(getRatisClientFromID(client.getCID()).update(
-                    getClientStorePath(client), client.toString()).getMessage().getContent().toString(
-                    Charset.defaultCharset())).toClient());
+
+            if (!getRatisClientFromID(client.getCID()).update(
+                    getClientStorePath(client), client.toString()).isSuccess()) {
+                throw new NotFoundItemInPortalException();
+            }
+            clientCacheService.updateClient(client);
         } catch (IllegalStateException illegalStateException) {
             illegalStateException.printStackTrace();
             logger.debug("Erro json inválido: " + client);
