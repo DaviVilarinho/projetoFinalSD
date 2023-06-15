@@ -103,10 +103,10 @@ public class ClientUpdaterMiddleware extends UpdaterMiddleware implements IClien
             retrieveClient(id);
         }
         try {
-            clientCacheService.deleteClient(ID.newBuilder().setID(ClientNative.fromJson(
-                    getRatisClientFromID(id.getID()).del(
-                            getStorePath(id.getID().toString())).getMessage().getContent().toString(
-                            Charset.defaultCharset())).getCID()).build());
+            if (!getRatisClientFromID(id.getID()).del(getStorePath(id.getID())).isSuccess()) {
+                throw new NotFoundItemInPortalException();
+            }
+            clientCacheService.deleteClient(id);
         } catch (IllegalStateException illegalStateException) {
             illegalStateException.printStackTrace();
             logger.debug("Erro json inválido: " + id);
