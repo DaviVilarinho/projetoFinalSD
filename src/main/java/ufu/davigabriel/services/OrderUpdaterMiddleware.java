@@ -5,21 +5,14 @@ import com.google.gson.JsonSyntaxException;
 import com.google.gson.reflect.TypeToken;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import ufu.davigabriel.exceptions.BadRequestException;
-import ufu.davigabriel.exceptions.DuplicatePortalItemException;
-import ufu.davigabriel.exceptions.NotFoundItemInPortalException;
-import ufu.davigabriel.exceptions.RatisClientException;
+import ufu.davigabriel.exceptions.*;
 import ufu.davigabriel.models.OrderNative;
-import ufu.davigabriel.models.ProductNative;
 import ufu.davigabriel.server.ID;
 import ufu.davigabriel.server.Order;
-import ufu.davigabriel.server.Product;
 import ufu.davigabriel.server.distributedDatabase.RatisClient;
 
-import java.lang.reflect.Array;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
-import java.util.stream.Collectors;
 
 public class OrderUpdaterMiddleware extends UpdaterMiddleware implements IOrderProxyDatabase {
     private static OrderUpdaterMiddleware instance;
@@ -53,8 +46,13 @@ public class OrderUpdaterMiddleware extends UpdaterMiddleware implements IOrderP
         return super.getRatisClients()[Integer.parseInt(id) % 2];
     }
 
+    public void throwIfClientUnauthorized(Order order) throws UnauthorizedUserException {
+        throw new UnauthorizedUserException();
+    }
+
     @Override
-    public void createOrder(Order order) throws DuplicatePortalItemException, RatisClientException, BadRequestException {
+    public void createOrder(Order order) throws DuplicatePortalItemException, RatisClientException, BadRequestException, UnauthorizedUserException {
+        throwIfClientUnauthorized(order);
         if (orderCacheService.hasOrder(order)) {
             throw new DuplicatePortalItemException("Order já existe: " + order);
         }
@@ -72,11 +70,13 @@ public class OrderUpdaterMiddleware extends UpdaterMiddleware implements IOrderP
     }
 
     @Override
-    public void updateOrder(Order order) throws NotFoundItemInPortalException, RatisClientException, BadRequestException {
+    public void updateOrder(Order order) throws NotFoundItemInPortalException, RatisClientException, BadRequestException, UnauthorizedUserException {
+        throwIfClientUnauthorized(order);
         if (!orderCacheService.hasOrder(order)) {
             retrieveOrder(order);
         }
         try {
+            throwIfClientUnauthorized(retrieveOrder(order));
             if (!getRatisClientFromOrder(order).update(
                     getOrderStorePath(order),
                     order.toString()).isSuccess()) {

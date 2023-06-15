@@ -153,7 +153,16 @@ public class OrderPortalServer {
 
         @Override
         public void retrieveClientOrders(ID request, StreamObserver<Order> responseObserver) {
-            //TODO
+            try {
+                orderUpdaterMiddleware.retrieveClientOrders(request).forEach(responseObserver::onNext);
+                logger.info("DELETADO: " + request);
+            } catch (PortalException exception) {
+                logger.info("NÃO FOI POSSÍVEL COLOCAR ORDEM DO USER " + request);
+                exception.printStackTrace();
+                exception.replyError(responseObserver);
+            } finally {
+                responseObserver.onCompleted();
+            }
         }
     }
 
