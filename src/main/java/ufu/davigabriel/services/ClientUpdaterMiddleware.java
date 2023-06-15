@@ -1,5 +1,6 @@
 package ufu.davigabriel.services;
 
+import com.google.gson.JsonSyntaxException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import ufu.davigabriel.exceptions.BadRequestException;
@@ -73,15 +74,16 @@ public class ClientUpdaterMiddleware extends UpdaterMiddleware implements IClien
         try {
             return clientCacheService.retrieveClient(id);
         } catch (NotFoundItemInPortalException notFoundItemInPortalException) {
-            logger.debug("ID não encontrado, tentando buscar no bd" + id.toString());
+            logger.debug("ID não encontrado, tentando buscar no bd " + id.toString());
         }
 
         try {
-            Client client = ClientNative.fromJson(getRatisClientFromID(id.getID()).get(
-                    getStorePath(id.getID())).getMessage().getContent().toString(
-                    Charset.defaultCharset())).toClient();
+            String queryClient = getRatisClientFromID(id.getID()).get(getStorePath(id.getID())).getMessage().getContent().toString(Charset.defaultCharset());
+            Client client = ClientNative.fromJson(queryClient).toClient();
             clientCacheService.createClient(client);
             return client;
+        } catch (JsonSyntaxException jsonSyntaxException) {
+            throw new NotFoundItemInPortalException();
         } catch (IllegalStateException illegalStateException) {
             illegalStateException.printStackTrace();
             logger.debug("Erro json inválido: " + id);

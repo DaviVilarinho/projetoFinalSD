@@ -6,6 +6,7 @@ import io.grpc.Server;
 import io.grpc.stub.StreamObserver;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import ufu.davigabriel.exceptions.NotFoundItemInPortalException;
 import ufu.davigabriel.exceptions.PortalException;
 import ufu.davigabriel.models.ClientNative;
 import ufu.davigabriel.models.ProductNative;
@@ -104,6 +105,9 @@ public class AdminPortalServer {
             try {
                 responseObserver.onNext(clientUpdaterMiddleware.retrieveClient(request));
                 logger.debug("CLIENTE RETORNADO COM SUCESSO");
+            } catch (NotFoundItemInPortalException notFoundItemInPortalException) {
+                responseObserver.onNext(ClientNative.generateEmptyClientNative().toClient());
+                logger.debug("CLIENTE NÃO EXISTE, RETORNADO VAZIO");
             } catch (PortalException exception) {
                 logger.info("NÃO FOI POSSÍVEL BUSCAR O CLIENTE " + request + " retornando nulo. " + exception.getMessage());
                 exception.printStackTrace();

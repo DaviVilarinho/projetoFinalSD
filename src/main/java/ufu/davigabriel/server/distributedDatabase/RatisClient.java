@@ -53,7 +53,7 @@ public class RatisClient {
 
     public RaftClientReply get(String key) throws RatisClientException {
         try {
-            return client.io().send(Message.valueOf("get:" + key));
+            return client.io().sendReadOnly(Message.valueOf("get:" + key));
         } catch (IOException ioException) {
             throw new RatisClientException();
         }
@@ -69,7 +69,7 @@ public class RatisClient {
 
     public RaftClientReply del(String key) throws RatisClientException {
         try {
-            return client.io().send(Message.valueOf("del:" + key));
+            return client.io().sendReadOnly(Message.valueOf("del:" + key));
         } catch (IOException ioException) {
             throw new RatisClientException();
         }
