@@ -25,18 +25,18 @@ public class AdminPortalServerTest {
     public static int TOLERANCE_MS = 1000;
 
     @Test
-    public void shouldCrudClientOneServer() throws IOException, InterruptedException {
-        Client clientThatShouldBeCreated = RandomUtils.generateRandomClient().toClient();
-        Client clientThatShouldNotBeCreated = RandomUtils.generateRandomClient().toClient();
-
+    public void shouldCrudClient() throws IOException, InterruptedException {
         String serverName = InProcessServerBuilder.generateName();
 
         // Create a server, add service, start, and register for automatic graceful shutdown.
         grpcCleanup.register(InProcessServerBuilder
-                .forName(serverName).directExecutor().addService(new AdminPortalServer.AdminPortalImpl()).build().start());
+                                     .forName(serverName).directExecutor().addService(new AdminPortalServer.AdminPortalImpl()).build().start());
 
         AdminPortalGrpc.AdminPortalBlockingStub blockingStub = AdminPortalGrpc.newBlockingStub(
                 grpcCleanup.register(InProcessChannelBuilder.forName(serverName).directExecutor().build()));
+
+        Client clientThatShouldBeCreated = RandomUtils.generateRandomClient().toClient();
+        Client clientThatShouldNotBeCreated = RandomUtils.generateRandomClient().toClient();
 
         Reply reply = blockingStub.createClient(clientThatShouldBeCreated);
         Client client = blockingStub.retrieveClient(ID.newBuilder().setID(clientThatShouldBeCreated.getCID()).build());
@@ -62,6 +62,8 @@ public class AdminPortalServerTest {
         Assert.assertEquals(reply.getError(), ReplyNative.SUCESSO.getError());
         client = blockingStub.retrieveClient(ID.newBuilder().setID(clientNativeThatShouldBeUpdated.getCID()).build());
         Assert.assertNotEquals(clientNativeThatShouldBeUpdated.toClient(), client);
+        reply = blockingStub.updateClient(clientNativeThatShouldBeUpdated.toClient());
+        Assert.assertEquals(reply.getError(), ReplyNative.INEXISTENTE.getError());
     }
 
     @Test
