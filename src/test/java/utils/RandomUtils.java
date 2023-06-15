@@ -23,7 +23,7 @@ public class RandomUtils {
 
     public static ProductNative generateRandomProduct() {
         return ProductNative.builder()
-                .PID(RandomString.make(32).strip().trim())
+                .PID(Integer.valueOf(Math.abs(ThreadLocalRandom.current().nextInt())).toString())
                 .name(RandomString.make(16))
                 .price(new Random().nextDouble())
                 .quantity(Math.abs(new Random().nextInt()) + 1)
@@ -39,7 +39,7 @@ public class RandomUtils {
 
     public static OrderNative generateRandomOrderNative(List<ProductNative> randomProductsNative, String clientId) {
         return OrderNative.builder()
-                .OID(RandomString.make(32).strip().trim())
+                .OID(Integer.valueOf(Math.abs(ThreadLocalRandom.current().nextInt())).toString())
                 .CID(clientId)
                 .products(randomProductsNative.stream().map(
                                 productNative -> OrderItemNative.convertProductNative(

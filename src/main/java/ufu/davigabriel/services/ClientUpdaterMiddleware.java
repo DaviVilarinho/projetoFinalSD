@@ -39,14 +39,15 @@ public class ClientUpdaterMiddleware extends UpdaterMiddleware implements IClien
             throw new DuplicatePortalItemException("Usuário já existe: " + client.toString());
         }
         try {
-            getRatisClientFromID(client.getCID()).add(getClientStorePath(client),
-                                                      ClientNative.fromClient(client).toJson());
+            if (!getRatisClientFromID(client.getCID()).add(getClientStorePath(client), ClientNative.fromClient(client).toJson()).isSuccess()) {
+                throw new DuplicatePortalItemException();
+            }
+            clientCacheService.createClient(client);
         } catch (IllegalStateException illegalStateException) {
             illegalStateException.printStackTrace();
             logger.debug("Erro json inválido: " + client);
             throw new BadRequestException();
         }
-        clientCacheService.createClient(client);
     }
 
     @Override
@@ -55,7 +56,6 @@ public class ClientUpdaterMiddleware extends UpdaterMiddleware implements IClien
             retrieveClient(client);
         }
         try {
-
             if (!getRatisClientFromID(client.getCID()).update(
                     getClientStorePath(client), client.toString()).isSuccess()) {
                 throw new NotFoundItemInPortalException();
