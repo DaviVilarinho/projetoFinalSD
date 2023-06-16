@@ -7,9 +7,7 @@ import ufu.davigabriel.exceptions.BadRequestException;
 import ufu.davigabriel.exceptions.DuplicatePortalItemException;
 import ufu.davigabriel.exceptions.NotFoundItemInPortalException;
 import ufu.davigabriel.exceptions.RatisClientException;
-import ufu.davigabriel.models.ClientNative;
 import ufu.davigabriel.models.ProductNative;
-import ufu.davigabriel.server.Client;
 import ufu.davigabriel.server.ID;
 import ufu.davigabriel.server.Product;
 

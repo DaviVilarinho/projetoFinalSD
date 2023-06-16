@@ -24,12 +24,12 @@ public class OrderUpdaterMiddleware extends UpdaterMiddleware implements IOrderP
     private static OrderUpdaterMiddleware instance;
     private OrderCacheService orderCacheService = OrderCacheService.getInstance();
     private Logger logger = LoggerFactory.getLogger(OrderUpdaterMiddleware.class);
-    private static AdminPortalGrpc.AdminPortalBlockingStub adminBlockStub;
+    private static AdminPortalGrpc.AdminPortalBlockingStub adminPortalBlockingStub;
 
-    public OrderUpdaterMiddleware() {
-        adminBlockStub = AdminPortalGrpc.newBlockingStub(Grpc.newChannelBuilder(
-                String.format("127.0.0.1:%d", GlobalVarsService.getInstance().getRandomAdminPortalPort()),
-                InsecureChannelCredentials.create()).build());
+    private OrderUpdaterMiddleware() {
+        String address = String.format("localhost:%d", GlobalVarsService.getInstance().getRandomAdminPortalPort());
+        System.out.println("Connecting to AdminPortalServer at " + address);
+        adminPortalBlockingStub = AdminPortalGrpc.newBlockingStub(Grpc.newChannelBuilder(address, InsecureChannelCredentials.create()).build());
     }
 
     public static OrderUpdaterMiddleware getInstance() {
@@ -38,6 +38,12 @@ public class OrderUpdaterMiddleware extends UpdaterMiddleware implements IOrderP
         }
         return instance;
     }
+    public void authenticateClient(String CID) throws UnauthorizedUserException {
+        Client client = adminPortalBlockingStub.retrieveClient(ID.newBuilder().setID(CID).build());
+
+        if("0".equals(client.getCID())) { throw new UnauthorizedUserException(); }
+    }
+
     @Override
     public String getSelfSavePath() {
         return "orders/";
@@ -69,6 +75,7 @@ public class OrderUpdaterMiddleware extends UpdaterMiddleware implements IOrderP
 
     @Override
     public void createOrder(Order order) throws DuplicatePortalItemException, RatisClientException, BadRequestException, UnauthorizedUserException {
+        authenticateClient(order.getCID());
         if (orderCacheService.hasOrder(order)) {
             throw new DuplicatePortalItemException("Order já existe: " + order);
         }
