@@ -124,7 +124,7 @@ public class OrderPortalServer {
                                                 .build());
                 logger.info("UPDATE CONCLUÍDO COM SUCESSO");
             } catch (PortalException exception) {
-                logger.info("NÃO FOI POSSÍVEL ATUALIZAR O PEDIDO " + request + exception.getMessage());
+                logger.error("NÃO FOI POSSÍVEL ATUALIZAR O PEDIDO " + request + exception.getMessage());
                 exception.printStackTrace();
                 exception.replyError(responseObserver);
             } finally {

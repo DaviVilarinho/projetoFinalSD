@@ -188,7 +188,7 @@ public class AdminPortalClient {
         }
     }
 
-    static private String geraId(String nome) {
+    static public String geraId(String nome) {
         CRC32 crc32 = new CRC32();
         crc32.update(nome.getBytes());
         return Integer.valueOf(Math.abs((int) crc32.getValue())).toString();

@@ -13,6 +13,7 @@ import ufu.davigabriel.server.distributedDatabase.RatisClient;
 
 import java.nio.charset.Charset;
 import java.util.ArrayList;
+import java.util.Optional;
 
 public class OrderUpdaterMiddleware extends UpdaterMiddleware implements IOrderProxyDatabase {
     private static OrderUpdaterMiddleware instance;
@@ -46,13 +47,16 @@ public class OrderUpdaterMiddleware extends UpdaterMiddleware implements IOrderP
         return super.getRatisClients()[Integer.parseInt(id) % 2];
     }
 
-    public void throwIfClientUnauthorized(Order order) throws UnauthorizedUserException {
-        throw new UnauthorizedUserException();
+    public void throwIfClientUnauthorized(Optional<Order> optionalOldOrder, Order newOrder) throws UnauthorizedUserException {
+        if (optionalOldOrder.isPresent()) {
+            if (!optionalOldOrder.get().getCID().equals(newOrder.getCID())) {
+                throw new UnauthorizedUserException();
+            }
+        }
     }
 
     @Override
     public void createOrder(Order order) throws DuplicatePortalItemException, RatisClientException, BadRequestException, UnauthorizedUserException {
-        throwIfClientUnauthorized(order);
         if (orderCacheService.hasOrder(order)) {
             throw new DuplicatePortalItemException("Order já existe: " + order);
         }
@@ -71,12 +75,9 @@ public class OrderUpdaterMiddleware extends UpdaterMiddleware implements IOrderP
 
     @Override
     public void updateOrder(Order order) throws NotFoundItemInPortalException, RatisClientException, BadRequestException, UnauthorizedUserException {
-        throwIfClientUnauthorized(order);
-        if (!orderCacheService.hasOrder(order)) {
-            retrieveOrder(order);
-        }
+        Optional<Order> oldOrder = Optional.of(retrieveOrder(order));
         try {
-            throwIfClientUnauthorized(retrieveOrder(order));
+            throwIfClientUnauthorized(oldOrder, order);
             if (!getRatisClientFromOrder(order).update(
                     getOrderStorePath(order),
                     order.toString()).isSuccess()) {

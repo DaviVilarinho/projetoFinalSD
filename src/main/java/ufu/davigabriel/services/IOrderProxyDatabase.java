@@ -7,11 +7,6 @@ import ufu.davigabriel.server.Order;
 
 import java.util.ArrayList;
 
-/**
- * O Middleware e a Database fazem uso desta interface para redirecionar as atribuicoes de cada
- * Middleware: falar para todos que houve mudancas
- * Database: realizar mudanca
- */
 public interface IOrderProxyDatabase {
     void createOrder(Order order) throws DuplicatePortalItemException, RatisClientException, BadRequestException, UnauthorizedUserException;
     void updateOrder(Order order) throws NotFoundItemInPortalException, RatisClientException, BadRequestException, UnauthorizedUserException;

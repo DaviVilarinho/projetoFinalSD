@@ -82,9 +82,10 @@ public class OrderPortalServerTest {
         Assert.assertEquals(orderPortalBlockingStub.createOrder(randomOrderTriple.getRandomOrderNative().toOrder()).getError(), ReplyNative.SUCESSO.getError());
 
         OrderNative orderNativeThatUserIsNotAuthenticated = randomOrderTriple.getRandomOrderNative();
-        orderNativeThatUserIsNotAuthenticated.setCID("naoexiste".repeat(5));
-        orderNativeThatUserIsNotAuthenticated.setOID(orderNativeThatUserIsNotAuthenticated.getOID().toLowerCase().repeat(3));
-        Assert.assertEquals(orderPortalBlockingStub.createOrder(orderNativeThatUserIsNotAuthenticated.toOrder()).getError(), ReplyNative.NAO_LOGADO.getError());
+        orderNativeThatUserIsNotAuthenticated.setOID(randomOrderTriple.getRandomOrderNative().getOID());
+        orderNativeThatUserIsNotAuthenticated.setCID(Integer.toString(Integer.parseInt(randomOrderTriple.getRandomOrderNative().getCID()) + 1));
+        Assert.assertEquals(orderPortalBlockingStub.createOrder(orderNativeThatUserIsNotAuthenticated.toOrder()).getError(), ReplyNative.DUPLICATA.getError());
+        Assert.assertEquals(orderPortalBlockingStub.updateOrder(orderNativeThatUserIsNotAuthenticated.toOrder()).getError(), ReplyNative.NAO_LOGADO.getError());
         Thread.sleep(TOLERANCE_MS);
     }
 

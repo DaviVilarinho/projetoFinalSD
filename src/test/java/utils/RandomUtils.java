@@ -1,6 +1,7 @@
 package utils;
 
 import net.bytebuddy.utility.RandomString;
+import ufu.davigabriel.client.AdminPortalClient;
 import ufu.davigabriel.models.ClientNative;
 import ufu.davigabriel.models.OrderItemNative;
 import ufu.davigabriel.models.OrderNative;
@@ -39,7 +40,7 @@ public class RandomUtils {
 
     public static OrderNative generateRandomOrderNative(List<ProductNative> randomProductsNative, String clientId) {
         return OrderNative.builder()
-                .OID(Integer.valueOf(Math.abs(ThreadLocalRandom.current().nextInt())).toString())
+                .OID(AdminPortalClient.geraId(RandomString.make(12)))
                 .CID(clientId)
                 .products(randomProductsNative.stream().map(
                                 productNative -> OrderItemNative.convertProductNative(

@@ -80,12 +80,18 @@ public class OrderPortalClient {
                 switch (orderPortalOption) {
                     case NOOP -> System.out.println("Nada a ser feito.");
                     case CRIAR_PEDIDO -> {
-                        String orderId = UUID.randomUUID().toString();
+                        String orderId = AdminPortalClient.geraId(UUID.randomUUID().toString());
                         System.out.print("Escreva a ID desejada para o pedido" +
-                                " (Enter para " + orderId + "): ");
+                                                 " (Enter para " + orderId + "): ");
                         String inputOrderId = scanner.nextLine();
-                        orderId = "".equals(inputOrderId.strip().trim()) ?
-                                orderId : inputOrderId;
+                        try {
+                            inputOrderId = "".equals(inputOrderId.strip().trim()) ?
+                                    orderId : inputOrderId;
+                            inputOrderId = String.valueOf(Integer.parseInt(inputOrderId));
+                            orderId = inputOrderId;
+                        } catch (NumberFormatException numberFormatException) {
+                            System.out.println(inputOrderId + " inválido... utilizando " + orderId);
+                        }
                         ArrayList<OrderItemNative> addedProducts = new ArrayList<>();
                         String option;
                         addedProducts.add(orderPortalClient.addProductToOrder()); //1° produto
