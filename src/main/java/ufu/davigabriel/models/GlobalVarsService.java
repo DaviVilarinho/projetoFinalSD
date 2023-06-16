@@ -1,11 +1,13 @@
 package ufu.davigabriel.models;
 
 import org.apache.ratis.protocol.RaftPeer;
+import ufu.davigabriel.server.AdminPortalServer;
 
 import java.net.InetSocketAddress;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Random;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
@@ -24,6 +26,9 @@ public class GlobalVarsService {
             new List[]{RATIS_DATABASE_PORTS_PARTITION_1, RATIS_DATABASE_PORTS_PARTITION_2};
 
     public static String STORAGE_DIR_DEFAULT = "/tmp";
+    public static int ADMIN_PORTAL_SERVER_BASE_PORT = 25506;
+    public static int ORDER_PORTAL_SERVER_BASE_PORT = 60552;
+    public static int PORTAL_SERVERS = 2;
     private static GlobalVarsService instance;
 
     public static GlobalVarsService getInstance() {
@@ -50,4 +55,7 @@ public class GlobalVarsService {
                         peerPartitionKeyAddress.getKey()).setAddress(peerPartitionKeyAddress.getValue()).build())
                 .collect(Collectors.toList());
     }
+
+    public int getRandomOrderPortalPort() {return GlobalVarsService.ORDER_PORTAL_SERVER_BASE_PORT + new Random().nextInt(GlobalVarsService.PORTAL_SERVERS);}
+    public int getRandomAdminPortalPort() {return GlobalVarsService.ADMIN_PORTAL_SERVER_BASE_PORT + new Random().nextInt(GlobalVarsService.PORTAL_SERVERS);}
 }

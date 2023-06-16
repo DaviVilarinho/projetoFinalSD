@@ -5,6 +5,7 @@ import io.grpc.InsecureServerCredentials;
 import io.grpc.Server;
 import io.grpc.stub.StreamObserver;
 import ufu.davigabriel.exceptions.*;
+import ufu.davigabriel.models.GlobalVarsService;
 import ufu.davigabriel.models.OrderNative;
 import ufu.davigabriel.models.ReplyNative;
 import ufu.davigabriel.services.OrderUpdaterMiddleware;
@@ -17,10 +18,9 @@ import java.util.concurrent.TimeUnit;
 public class OrderPortalServer {
     private static Logger logger = LoggerFactory.getLogger(AdminPortalServer.class);
     private Server server;
-    public static int BASE_PORTAL_SERVER_PORT = 60552;
 
     public static void main(String[] args) throws IOException, InterruptedException {
-        int port = BASE_PORTAL_SERVER_PORT;
+        int port = GlobalVarsService.ORDER_PORTAL_SERVER_BASE_PORT;
         try {
             if (args.length > 0) { // aceita dinamicamente portas somado ao valor base
                 port = Integer.parseInt(args[0]);

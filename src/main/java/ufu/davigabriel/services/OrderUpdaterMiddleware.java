@@ -3,10 +3,15 @@ package ufu.davigabriel.services;
 import com.google.gson.Gson;
 import com.google.gson.JsonSyntaxException;
 import com.google.gson.reflect.TypeToken;
+import io.grpc.Grpc;
+import io.grpc.InsecureChannelCredentials;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import ufu.davigabriel.exceptions.*;
+import ufu.davigabriel.models.GlobalVarsService;
 import ufu.davigabriel.models.OrderNative;
+import ufu.davigabriel.server.AdminPortalGrpc;
+import ufu.davigabriel.server.Client;
 import ufu.davigabriel.server.ID;
 import ufu.davigabriel.server.Order;
 import ufu.davigabriel.server.distributedDatabase.RatisClient;
@@ -19,6 +24,13 @@ public class OrderUpdaterMiddleware extends UpdaterMiddleware implements IOrderP
     private static OrderUpdaterMiddleware instance;
     private OrderCacheService orderCacheService = OrderCacheService.getInstance();
     private Logger logger = LoggerFactory.getLogger(OrderUpdaterMiddleware.class);
+    private static AdminPortalGrpc.AdminPortalBlockingStub adminBlockStub;
+
+    public OrderUpdaterMiddleware() {
+        adminBlockStub = AdminPortalGrpc.newBlockingStub(Grpc.newChannelBuilder(
+                String.format("127.0.0.1:%d", GlobalVarsService.getInstance().getRandomAdminPortalPort()),
+                InsecureChannelCredentials.create()).build());
+    }
 
     public static OrderUpdaterMiddleware getInstance() {
         if (instance == null) {

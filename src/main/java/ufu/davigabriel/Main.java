@@ -9,8 +9,6 @@ import java.util.List;
 import java.util.stream.IntStream;
 
 public class Main {
-    public static int PORTAL_SERVERS = 2;
-
     public static void main(String[] args) throws InterruptedException{
         // refazer
         System.out.println("Dessa vez, vamos criar multiplas main?");

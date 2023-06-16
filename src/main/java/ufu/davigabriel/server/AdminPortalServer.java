@@ -9,6 +9,7 @@ import org.slf4j.LoggerFactory;
 import ufu.davigabriel.exceptions.NotFoundItemInPortalException;
 import ufu.davigabriel.exceptions.PortalException;
 import ufu.davigabriel.models.ClientNative;
+import ufu.davigabriel.models.GlobalVarsService;
 import ufu.davigabriel.models.ProductNative;
 import ufu.davigabriel.models.ReplyNative;
 import ufu.davigabriel.services.ClientUpdaterMiddleware;
@@ -18,12 +19,11 @@ import java.io.IOException;
 import java.util.concurrent.TimeUnit;
 
 public class AdminPortalServer {
-    public static int BASE_PORTAL_SERVER_PORT = 25506; // definindo porta base para servers
     private static Logger logger = LoggerFactory.getLogger(AdminPortalServer.class);
     private Server server;
 
     public static void main(String[] args) throws IOException, InterruptedException {
-        int port = BASE_PORTAL_SERVER_PORT;
+        int port = GlobalVarsService.ADMIN_PORTAL_SERVER_BASE_PORT;
 
         try {
             if (args.length > 0) { // aceita dinamicamente portas somado ao valor base

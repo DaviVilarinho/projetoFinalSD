@@ -3,21 +3,19 @@ package ufu.davigabriel.client;
 import io.grpc.Grpc;
 import io.grpc.InsecureChannelCredentials;
 import io.grpc.ManagedChannel;
-import ufu.davigabriel.Main;
 import ufu.davigabriel.models.ClientNative;
+import ufu.davigabriel.models.GlobalVarsService;
 import ufu.davigabriel.models.ProductNative;
 import ufu.davigabriel.models.ReplyNative;
 import ufu.davigabriel.server.*;
 
 import java.util.*;
-import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.TimeUnit;
 import java.util.zip.CRC32;
 
 public class AdminPortalClient {
     public static String HOST = "127.0.0.1";
-    public static int SERVER_PORT =
-            AdminPortalServer.BASE_PORTAL_SERVER_PORT + new Random().nextInt(Main.PORTAL_SERVERS);
+    public static int SERVER_PORT = GlobalVarsService.ADMIN_PORTAL_SERVER_BASE_PORT + new Random().nextInt(GlobalVarsService.PORTAL_SERVERS);
     public static String TARGET_SERVER = String.format("%s:%d", HOST, SERVER_PORT);
     private static AdminPortalGrpc.AdminPortalBlockingStub blockingStub;
     private static final Scanner scanner = new Scanner(System.in);

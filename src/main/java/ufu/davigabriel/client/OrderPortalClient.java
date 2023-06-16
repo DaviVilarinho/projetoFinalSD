@@ -5,10 +5,7 @@ import io.grpc.Grpc;
 import io.grpc.InsecureChannelCredentials;
 import io.grpc.ManagedChannel;
 import ufu.davigabriel.Main;
-import ufu.davigabriel.models.ClientNative;
-import ufu.davigabriel.models.OrderItemNative;
-import ufu.davigabriel.models.OrderNative;
-import ufu.davigabriel.models.ReplyNative;
+import ufu.davigabriel.models.*;
 import ufu.davigabriel.server.*;
 
 import java.util.*;
@@ -16,7 +13,7 @@ import java.util.concurrent.TimeUnit;
 
 public class OrderPortalClient {
     private static final String HOST = "127.0.0.1";
-    private static int SERVER_PORT = OrderPortalServer.BASE_PORTAL_SERVER_PORT + new Random().nextInt(Main.PORTAL_SERVERS);
+    private static int SERVER_PORT = GlobalVarsService.ORDER_PORTAL_SERVER_BASE_PORT + new Random().nextInt(GlobalVarsService.PORTAL_SERVERS);
     public static String TARGET_SERVER = String.format("%s:%d", HOST, SERVER_PORT);
     private static final Scanner scanner = new Scanner(System.in);
     private final OrderPortalGrpc.OrderPortalBlockingStub blockingStub;
@@ -48,7 +45,7 @@ public class OrderPortalClient {
 
         ManagedChannel channel = Grpc.newChannelBuilder(TARGET_SERVER, InsecureChannelCredentials.create()).build();
 
-        String CONNECTION_SERVER = String.format("%s:%d", "127.0.0.1", AdminPortalServer.BASE_PORTAL_SERVER_PORT + new Random().nextInt(Main.PORTAL_SERVERS));
+        String CONNECTION_SERVER = String.format("%s:%d", "127.0.0.1", GlobalVarsService.getInstance().getRandomAdminPortalPort());
         ManagedChannel connectionChannel = Grpc.newChannelBuilder(CONNECTION_SERVER, InsecureChannelCredentials.create()).build();
         AdminPortalGrpc.AdminPortalBlockingStub adminPortalBlockingStub = AdminPortalGrpc.newBlockingStub(connectionChannel);
 
