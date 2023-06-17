@@ -77,11 +77,11 @@ public class OrderPortalServerTest {
             Thread.sleep(TOLERANCE_MS);
         }
         Assert.assertEquals(orderPortalBlockingStub.createOrder(randomOrderTriple.getRandomOrderNative().toOrder()).getError(), ReplyNative.SUCESSO.getError());
+        Assert.assertEquals(orderPortalBlockingStub.createOrder(randomOrderTriple.getRandomOrderNative().toOrder()).getError(), ReplyNative.DUPLICATA.getError());
 
         OrderNative orderNativeThatUserIsNotAuthenticated = randomOrderTriple.getRandomOrderNative();
         orderNativeThatUserIsNotAuthenticated.setOID(randomOrderTriple.getRandomOrderNative().getOID());
         orderNativeThatUserIsNotAuthenticated.setCID(Integer.toString(Integer.parseInt(randomOrderTriple.getRandomOrderNative().getCID()) + 1));
-        Assert.assertEquals(orderPortalBlockingStub.createOrder(orderNativeThatUserIsNotAuthenticated.toOrder()).getError(), ReplyNative.DUPLICATA.getError());
         Assert.assertEquals(orderPortalBlockingStub.updateOrder(orderNativeThatUserIsNotAuthenticated.toOrder()).getError(), ReplyNative.NAO_LOGADO.getError());
         Thread.sleep(TOLERANCE_MS);
     }

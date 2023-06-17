@@ -80,14 +80,14 @@ public class OrderPortalServer {
 
         @Override
         public void createOrder(Order request, StreamObserver<Reply> responseObserver) {
-            logger.info("CRIAR PEDIDO " + request.toString());
+            System.out.println("CRIAR PEDIDO " + request.toString());
             try {
                 orderUpdaterMiddleware.createOrder(request);
                 responseObserver.onNext(Reply.newBuilder()
                                                 .setError(ReplyNative.SUCESSO.getError())
                                                 .setDescription(ReplyNative.SUCESSO.getDescription())
                                                 .build());
-                logger.info("PEDIDO CRIADO");
+                System.out.println("PEDIDO CRIADO");
             } catch (PortalException exception) {
                 logger.error("NÃO FOI POSSÍVEL CRIAR O PEDIDO " + request + "retornando nulo.\n " + exception.getMessage() +
                                      "\n" + exception.getStackTrace().toString());
@@ -100,12 +100,12 @@ public class OrderPortalServer {
 
         @Override
         public void retrieveOrder(ID request, StreamObserver<Order> responseObserver) {
-            logger.info("BUSCAR PEDIDO " + request.toString());
+            System.out.println("BUSCAR PEDIDO " + request.toString());
             try {
                 responseObserver.onNext(orderUpdaterMiddleware.retrieveOrder(request));
-                logger.debug("PEDIDO RETORNADO COM SUCESSO");
+                System.out.println("PEDIDO RETORNADO COM SUCESSO");
             } catch (PortalException exception) {
-                logger.info("NÃO FOI POSSÍVEL BUSCAR O PEDIDO " + request + " retornando nulo. " + exception.getMessage());
+                System.out.println("NÃO FOI POSSÍVEL BUSCAR O PEDIDO " + request + " retornando nulo. " + exception.getMessage());
                 exception.printStackTrace();
                 responseObserver.onNext(OrderNative.generateEmptyOrderNative().toOrder());
             } finally {
@@ -115,14 +115,14 @@ public class OrderPortalServer {
 
         @Override
         public void updateOrder(Order request, StreamObserver<Reply> responseObserver) {
-            logger.info("DAR UPDATE EM PEDIDO " + request);
+            System.out.println("DAR UPDATE EM PEDIDO " + request);
             try {
                 orderUpdaterMiddleware.updateOrder(request);
                 responseObserver.onNext(Reply.newBuilder()
                                                 .setError(ReplyNative.SUCESSO.getError())
                                                 .setDescription(ReplyNative.SUCESSO.getDescription())
                                                 .build());
-                logger.info("UPDATE CONCLUÍDO COM SUCESSO");
+                System.out.println("UPDATE CONCLUÍDO COM SUCESSO");
             } catch (PortalException exception) {
                 logger.error("NÃO FOI POSSÍVEL ATUALIZAR O PEDIDO " + request + exception.getMessage());
                 exception.printStackTrace();
@@ -134,16 +134,16 @@ public class OrderPortalServer {
 
         @Override
         public void deleteOrder(ID request, StreamObserver<Reply> responseObserver) {
-            logger.info("DELETAR " + request);
+            System.out.println("DELETAR " + request);
             try {
                 orderUpdaterMiddleware.deleteOrder(request);
                 responseObserver.onNext(Reply.newBuilder()
                                                 .setError(ReplyNative.SUCESSO.getError())
                                                 .setDescription(ReplyNative.SUCESSO.getDescription())
                                                 .build());
-                logger.info("DELETADO: " + request);
+                System.out.println("DELETADO: " + request);
             } catch (PortalException exception) {
-                logger.info("NÃO FOI POSSÍVEL DELETAR O PEDIDO " + request + " retornando nulo. " + exception.getMessage());
+                System.out.println("NÃO FOI POSSÍVEL DELETAR O PEDIDO " + request + " retornando nulo. " + exception.getMessage());
                 exception.printStackTrace();
                 exception.replyError(responseObserver);
             } finally {
@@ -155,9 +155,9 @@ public class OrderPortalServer {
         public void retrieveClientOrders(ID request, StreamObserver<Order> responseObserver) {
             try {
                 orderUpdaterMiddleware.retrieveClientOrders(request).forEach(responseObserver::onNext);
-                logger.info("DELETADO: " + request);
+                System.out.println("DELETADO: " + request);
             } catch (PortalException exception) {
-                logger.info("NÃO FOI POSSÍVEL COLOCAR ORDEM DO USER " + request);
+                System.out.println("NÃO FOI POSSÍVEL COLOCAR ORDEM DO USER " + request);
                 exception.printStackTrace();
                 exception.replyError(responseObserver);
             } finally {

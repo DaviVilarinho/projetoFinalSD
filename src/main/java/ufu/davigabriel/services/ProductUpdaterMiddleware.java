@@ -45,7 +45,7 @@ public class ProductUpdaterMiddleware extends UpdaterMiddleware implements IProd
             productCacheService.createProduct(product);
         } catch (IllegalStateException illegalStateException) {
             illegalStateException.printStackTrace();
-            logger.debug("Erro json inválido: " + product);
+            System.out.println("Erro json inválido: " + product);
             throw new BadRequestException();
         }
     }
@@ -63,7 +63,7 @@ public class ProductUpdaterMiddleware extends UpdaterMiddleware implements IProd
             productCacheService.updateProduct(product);
         } catch (IllegalStateException illegalStateException) {
             illegalStateException.printStackTrace();
-            logger.debug("Erro json inválido: " + product);
+            System.out.println("Erro json inválido: " + product);
             throw new BadRequestException();
         }
     }
@@ -77,7 +77,7 @@ public class ProductUpdaterMiddleware extends UpdaterMiddleware implements IProd
         try {
             return productCacheService.retrieveProduct(id);
         } catch (NotFoundItemInPortalException notFoundItemInPortalException) {
-            logger.debug("ID não encontrado, tentando buscar no bd " + id);
+            System.out.println("ID não encontrado, tentando buscar no bd " + id);
         }
 
         try {
@@ -89,7 +89,7 @@ public class ProductUpdaterMiddleware extends UpdaterMiddleware implements IProd
             throw new NotFoundItemInPortalException();
         } catch (IllegalStateException illegalStateException) {
             illegalStateException.printStackTrace();
-            logger.debug("Erro json inválido: " + id);
+            System.out.println("Erro json inválido: " + id);
             throw new BadRequestException();
         } catch (DuplicatePortalItemException e) {
             e.printStackTrace();
@@ -110,7 +110,7 @@ public class ProductUpdaterMiddleware extends UpdaterMiddleware implements IProd
             productCacheService.deleteProduct(id);
         } catch (IllegalStateException illegalStateException) {
             illegalStateException.printStackTrace();
-            logger.debug("Erro json inválido: " + id);
+            System.out.println("Erro json inválido: " + id);
             throw new BadRequestException();
         }
     }

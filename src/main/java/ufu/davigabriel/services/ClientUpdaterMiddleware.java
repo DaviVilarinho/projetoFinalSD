@@ -45,7 +45,7 @@ public class ClientUpdaterMiddleware extends UpdaterMiddleware implements IClien
             clientCacheService.createClient(client);
         } catch (IllegalStateException illegalStateException) {
             illegalStateException.printStackTrace();
-            logger.debug("Erro json inválido: " + client);
+            System.out.println("Erro json inválido: " + client);
             throw new BadRequestException();
         }
     }
@@ -63,7 +63,7 @@ public class ClientUpdaterMiddleware extends UpdaterMiddleware implements IClien
             clientCacheService.updateClient(client);
         } catch (IllegalStateException illegalStateException) {
             illegalStateException.printStackTrace();
-            logger.debug("Erro json inválido: " + client);
+            System.out.println("Erro json inválido: " + client);
             throw new BadRequestException();
         }
     }
@@ -77,7 +77,7 @@ public class ClientUpdaterMiddleware extends UpdaterMiddleware implements IClien
         try {
             return clientCacheService.retrieveClient(id);
         } catch (NotFoundItemInPortalException notFoundItemInPortalException) {
-            logger.debug("ID não encontrado, tentando buscar no bd " + id.toString());
+            System.out.println("ID não encontrado, tentando buscar no bd " + id.toString());
         }
 
         try {
@@ -89,7 +89,7 @@ public class ClientUpdaterMiddleware extends UpdaterMiddleware implements IClien
             throw new NotFoundItemInPortalException();
         } catch (IllegalStateException illegalStateException) {
             illegalStateException.printStackTrace();
-            logger.debug("Erro json inválido: " + id);
+            System.out.println("Erro json inválido: " + id);
             throw new BadRequestException();
         } catch (DuplicatePortalItemException e) {
             e.printStackTrace();
@@ -109,7 +109,7 @@ public class ClientUpdaterMiddleware extends UpdaterMiddleware implements IClien
             clientCacheService.deleteClient(id);
         } catch (IllegalStateException illegalStateException) {
             illegalStateException.printStackTrace();
-            logger.debug("Erro json inválido: " + id);
+            System.out.println("Erro json inválido: " + id);
             throw new BadRequestException();
         }
     }

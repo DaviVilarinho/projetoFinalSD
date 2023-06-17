@@ -27,7 +27,7 @@ public class OrderUpdaterMiddleware extends UpdaterMiddleware implements IOrderP
 
     private OrderUpdaterMiddleware() {
         String address = String.format("localhost:%d", GlobalVarsService.getInstance().getRandomAdminPortalPort());
-        logger.debug("Connecting to AdminPortalServer at " + address);
+        System.out.println("Connecting to AdminPortalServer at " + address);
         adminBlockingStub = AdminPortalGrpc.newBlockingStub(
                 Grpc.newChannelBuilder(address, InsecureChannelCredentials.create()).build());
     }
@@ -101,7 +101,7 @@ public class OrderUpdaterMiddleware extends UpdaterMiddleware implements IOrderP
             orderCacheService.createOrder(order);
         } catch (IllegalStateException illegalStateException) {
             illegalStateException.printStackTrace();
-            logger.debug("Erro json inválido: " + order);
+            System.out.println("Erro json inválido: " + order);
             throw new BadRequestException();
         }
         addClientOrderId(order);
@@ -125,7 +125,7 @@ public class OrderUpdaterMiddleware extends UpdaterMiddleware implements IOrderP
             orderCacheService.updateOrder(order);
         } catch (IllegalStateException illegalStateException) {
             illegalStateException.printStackTrace();
-            logger.debug("Erro json inválido: " + order);
+            System.out.println("Erro json inválido: " + order);
             throw new BadRequestException();
         }
         HashMap<String, Integer> auxiliarHashMapForProductQuantityRestoration = new HashMap<>();
@@ -148,7 +148,7 @@ public class OrderUpdaterMiddleware extends UpdaterMiddleware implements IOrderP
         try {
             return orderCacheService.retrieveOrder(id);
         } catch (NotFoundItemInPortalException notFoundItemInPortalException) {
-            logger.debug("ID não encontrado, tentando buscar no bd " + id);
+            System.out.println("ID não encontrado, tentando buscar no bd " + id);
         }
 
         try {
@@ -160,7 +160,7 @@ public class OrderUpdaterMiddleware extends UpdaterMiddleware implements IOrderP
             throw new NotFoundItemInPortalException();
         } catch (IllegalStateException illegalStateException) {
             illegalStateException.printStackTrace();
-            logger.debug("Erro json inválido: " + id);
+            System.out.println("Erro json inválido: " + id);
             throw new BadRequestException();
         } catch (DuplicatePortalItemException e) {
             e.printStackTrace();
@@ -178,7 +178,7 @@ public class OrderUpdaterMiddleware extends UpdaterMiddleware implements IOrderP
             orderCacheService.deleteOrder(id);
         } catch (IllegalStateException illegalStateException) {
             illegalStateException.printStackTrace();
-            logger.debug("Erro json inválido: " + id);
+            System.out.println("Erro json inválido: " + id);
             throw new BadRequestException();
         }
         OrderNative.fromOrder(toDeleteOrder).getProducts().forEach(orderItemNative -> {
@@ -200,7 +200,7 @@ public class OrderUpdaterMiddleware extends UpdaterMiddleware implements IOrderP
         try {
             return orderCacheService.retrieveClientOrdersIds(id);
         } catch (NotFoundItemInPortalException notFoundItemInPortalException) {
-            logger.debug("Não havia na cache os dados do cliente " + id);
+            System.out.println("Não havia na cache os dados do cliente " + id);
         }
         try {
             String query = getRatisClientFromID(id.getID()).get(id.getID()).getMessage().getContent().toString(Charset.defaultCharset());
@@ -212,7 +212,7 @@ public class OrderUpdaterMiddleware extends UpdaterMiddleware implements IOrderP
             throw new NotFoundItemInPortalException();
         } catch (IllegalStateException illegalStateException) {
             illegalStateException.printStackTrace();
-            logger.debug("Erro json inválido: " + id);
+            System.out.println("Erro json inválido: " + id);
             throw new BadRequestException();
         }
     }
@@ -239,7 +239,7 @@ public class OrderUpdaterMiddleware extends UpdaterMiddleware implements IOrderP
         try {
             clientOrders = retrieveClientOrdersIds(ID.newBuilder().setID(clientId).build());
         } catch (NotFoundItemInPortalException | BadRequestException notFoundItemInPortalException) {
-            logger.debug("Cliente não havia ordens");
+            System.out.println("Cliente não havia ordens");
             clientOrders = new ArrayList<>();
         }
         clientOrders.add(orderId);
@@ -252,7 +252,7 @@ public class OrderUpdaterMiddleware extends UpdaterMiddleware implements IOrderP
         try {
             clientOrders = retrieveClientOrdersIds(ID.newBuilder().setID(clientId).build());
         } catch (NotFoundItemInPortalException | RatisClientException notFoundItemInPortalException) {
-            logger.debug("Cliente não havia ordens, nada a remover");
+            System.out.println("Cliente não havia ordens, nada a remover");
             clientOrders = new ArrayList<>();
         }
         clientOrders.remove(orderId);
