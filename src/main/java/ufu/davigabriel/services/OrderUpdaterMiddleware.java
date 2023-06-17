@@ -23,8 +23,13 @@ public class OrderUpdaterMiddleware extends UpdaterMiddleware implements IOrderP
     private static OrderUpdaterMiddleware instance;
     private OrderCacheService orderCacheService = OrderCacheService.getInstance();
     private Logger logger = LoggerFactory.getLogger(OrderUpdaterMiddleware.class);
+    private static AdminPortalGrpc.AdminPortalBlockingStub adminBlockingStub;
 
     private OrderUpdaterMiddleware() {
+        String address = String.format("localhost:%d", GlobalVarsService.getInstance().getRandomAdminPortalPort());
+        logger.debug("Connecting to AdminPortalServer at " + address);
+        adminBlockingStub = AdminPortalGrpc.newBlockingStub(
+                Grpc.newChannelBuilder(address, InsecureChannelCredentials.create()).build());
     }
 
     public static OrderUpdaterMiddleware getInstance() {
@@ -36,10 +41,6 @@ public class OrderUpdaterMiddleware extends UpdaterMiddleware implements IOrderP
 
     private void changeGlobalProductQuantity(String productId, int variation) {
         try {
-            String address = String.format("localhost:%d", GlobalVarsService.getInstance().getRandomAdminPortalPort());
-            System.out.println("Connecting to AdminPortalServer at " + address);
-            AdminPortalGrpc.AdminPortalBlockingStub adminBlockingStub = AdminPortalGrpc.newBlockingStub(
-                    Grpc.newChannelBuilder(address, InsecureChannelCredentials.create()).build());
             ProductNative productToBeAdjusted = ProductNative.fromProduct(adminBlockingStub.retrieveProduct(ID.newBuilder().setID(productId).build()));
             productToBeAdjusted.setQuantity(productToBeAdjusted.getQuantity() + variation);
             adminBlockingStub.updateProduct(productToBeAdjusted.toProduct());
@@ -50,6 +51,11 @@ public class OrderUpdaterMiddleware extends UpdaterMiddleware implements IOrderP
     }
 
     public void authenticateClient(String CID) throws UnauthorizedUserException {
+        Client client = adminBlockingStub.retrieveClient(ID.newBuilder().setID(CID).build());
+
+        System.out.println("Encontrado um cliente do portal admin: " + client.toString());
+
+        if("0".equals(client.getCID())) throw new UnauthorizedUserException();
     }
 
     @Override
@@ -74,7 +80,7 @@ public class OrderUpdaterMiddleware extends UpdaterMiddleware implements IOrderP
         return super.getRatisClients()[Integer.parseInt(id) % 2];
     }
 
-    public void throwIfClientUnauthorized(Optional<Order> optionalOldOrder, Order newOrder) throws UnauthorizedUserException {
+    public void throwIfCIDIsDifferentFromOldOrderCID(Optional<Order> optionalOldOrder, Order newOrder) throws UnauthorizedUserException {
         if (optionalOldOrder.isPresent()) {
             if (!optionalOldOrder.get().getCID().equals(newOrder.getCID())) {
                 throw new UnauthorizedUserException();
@@ -105,7 +111,8 @@ public class OrderUpdaterMiddleware extends UpdaterMiddleware implements IOrderP
     @Override
     public void updateOrder(Order order) throws NotFoundItemInPortalException, RatisClientException, BadRequestException, UnauthorizedUserException {
         Optional<Order> oldOrder = Optional.of(retrieveOrder(order));
-        throwIfClientUnauthorized(oldOrder, order);
+        authenticateClient(order.getCID());
+        throwIfCIDIsDifferentFromOldOrderCID(oldOrder, order);
         OrderNative newOrderNative = OrderNative.fromOrder(order);
         newOrderNative.getProducts().removeIf(item -> item.getQuantity() == 0);
         try {
