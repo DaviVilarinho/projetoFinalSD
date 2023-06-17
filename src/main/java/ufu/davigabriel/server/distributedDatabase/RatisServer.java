@@ -57,7 +57,7 @@ public class RatisServer {
 
         // Join the group of processes.
         final RaftGroup raftGroup = RaftGroup.valueOf(RaftGroupId.valueOf(ByteString.copyFromUtf8(GlobalVarsService.PARTITION_RATIS_IDS[ratisPartitionNumber])), addresses);
-        RaftServer raftServer = RaftServer.newBuilder().setServerId(myId).setStateMachine(new BaseStateMachine()).setProperties(properties).setGroup(raftGroup).build();
+        RaftServer raftServer = RaftServer.newBuilder().setServerId(myId).setStateMachine(new BaseStateMachine(ratisPartitionPeerId, ratisPartitionNumber)).setProperties(properties).setGroup(raftGroup).build();
         raftServer.start();
         while (raftServer.getLifeCycleState() != LifeCycle.State.CLOSED) {
             TimeUnit.SECONDS.sleep(1);
