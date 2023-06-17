@@ -1,6 +1,5 @@
 package ufu.davigabriel.services;
 
-import com.google.common.util.concurrent.ListenableFuture;
 import com.google.gson.Gson;
 import com.google.gson.JsonSyntaxException;
 import com.google.gson.reflect.TypeToken;
@@ -36,20 +35,18 @@ public class OrderUpdaterMiddleware extends UpdaterMiddleware implements IOrderP
     }
 
     private void changeGlobalProductQuantity(String productId, int variation) {
-        new Thread(() -> {
-            try {
-                String address = String.format("localhost:%d", GlobalVarsService.getInstance().getRandomAdminPortalPort());
-                System.out.println("Connecting to AdminPortalServer at " + address);
-                AdminPortalGrpc.AdminPortalBlockingStub adminBlockingStub = AdminPortalGrpc.newBlockingStub(
-                        Grpc.newChannelBuilder(address, InsecureChannelCredentials.create()).build()).withWaitForReady();
-                ProductNative productToBeAdjusted = ProductNative.fromProduct(adminBlockingStub.retrieveProduct(ID.newBuilder().setID(productId).build()));
-                productToBeAdjusted.setQuantity(productToBeAdjusted.getQuantity() + variation);
-                adminBlockingStub.updateProduct(productToBeAdjusted.toProduct());
-            } catch (Exception exception) {
-                exception.printStackTrace();
-                System.err.println("Não foi possível atualizar " + productId + " para uma variação de " + variation);
-            }
-        }).start();
+        try {
+            String address = String.format("localhost:%d", GlobalVarsService.getInstance().getRandomAdminPortalPort());
+            System.out.println("Connecting to AdminPortalServer at " + address);
+            AdminPortalGrpc.AdminPortalBlockingStub adminBlockingStub = AdminPortalGrpc.newBlockingStub(
+                    Grpc.newChannelBuilder(address, InsecureChannelCredentials.create()).build());
+            ProductNative productToBeAdjusted = ProductNative.fromProduct(adminBlockingStub.retrieveProduct(ID.newBuilder().setID(productId).build()));
+            productToBeAdjusted.setQuantity(productToBeAdjusted.getQuantity() + variation);
+            adminBlockingStub.updateProduct(productToBeAdjusted.toProduct());
+        } catch (Exception exception) {
+            exception.printStackTrace();
+            System.err.println("Não foi possível atualizar " + productId + " para uma variação de " + variation);
+        }
     }
 
     public void authenticateClient(String CID) throws UnauthorizedUserException {
@@ -102,7 +99,7 @@ public class OrderUpdaterMiddleware extends UpdaterMiddleware implements IOrderP
             throw new BadRequestException();
         }
         addClientOrderId(order);
-        new Thread(() -> OrderNative.fromOrder(order).getProducts().forEach(orderItemNative -> changeGlobalProductQuantity(orderItemNative.getPID(), -orderItemNative.getQuantity()))).start();
+        OrderNative.fromOrder(order).getProducts().forEach(orderItemNative -> changeGlobalProductQuantity(orderItemNative.getPID(), -orderItemNative.getQuantity()));
     }
 
     @Override
@@ -124,17 +121,15 @@ public class OrderUpdaterMiddleware extends UpdaterMiddleware implements IOrderP
             logger.debug("Erro json inválido: " + order);
             throw new BadRequestException();
         }
-        new Thread(() -> {
-            HashMap<String, Integer> auxiliarHashMapForProductQuantityRestoration = new HashMap<>();
-            OrderNative oldOrderNative = OrderNative.fromOrder(oldOrder.get());
-            oldOrderNative.getProducts().forEach(oldItem -> auxiliarHashMapForProductQuantityRestoration.put(
-                    oldItem.getPID(),
-                    auxiliarHashMapForProductQuantityRestoration.getOrDefault(oldItem.getPID(), 0) + oldItem.getQuantity()));
-            newOrderNative.getProducts().forEach(newItem -> auxiliarHashMapForProductQuantityRestoration.put(
-                    newItem.getPID(),
-                    auxiliarHashMapForProductQuantityRestoration.getOrDefault(newItem.getPID(), 0) - newItem.getQuantity()));
-            auxiliarHashMapForProductQuantityRestoration.forEach(this::changeGlobalProductQuantity);
-        }).start();
+        HashMap<String, Integer> auxiliarHashMapForProductQuantityRestoration = new HashMap<>();
+        OrderNative oldOrderNative = OrderNative.fromOrder(oldOrder.get());
+        oldOrderNative.getProducts().forEach(oldItem -> auxiliarHashMapForProductQuantityRestoration.put(
+                oldItem.getPID(),
+                auxiliarHashMapForProductQuantityRestoration.getOrDefault(oldItem.getPID(), 0) + oldItem.getQuantity()));
+        newOrderNative.getProducts().forEach(newItem -> auxiliarHashMapForProductQuantityRestoration.put(
+                newItem.getPID(),
+                auxiliarHashMapForProductQuantityRestoration.getOrDefault(newItem.getPID(), 0) - newItem.getQuantity()));
+        auxiliarHashMapForProductQuantityRestoration.forEach(this::changeGlobalProductQuantity);
     }
 
     public Order retrieveOrder(Order order) throws NotFoundItemInPortalException, RatisClientException, BadRequestException {
@@ -179,11 +174,9 @@ public class OrderUpdaterMiddleware extends UpdaterMiddleware implements IOrderP
             logger.debug("Erro json inválido: " + id);
             throw new BadRequestException();
         }
-        new Thread(() -> {
-            OrderNative.fromOrder(toDeleteOrder).getProducts().forEach(orderItemNative -> {
-                changeGlobalProductQuantity(orderItemNative.getPID(), orderItemNative.getQuantity());
-            });
-        }).start();
+        OrderNative.fromOrder(toDeleteOrder).getProducts().forEach(orderItemNative -> {
+            changeGlobalProductQuantity(orderItemNative.getPID(), orderItemNative.getQuantity());
+        });
     }
 
     @Override

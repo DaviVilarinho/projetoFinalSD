@@ -1,4 +1,4 @@
 #!/bin/bash
 
-java -Dlog4j.rootLogger=DEBUG -cp target/projetoFinalSD-1.0-SNAPSHOT-jar-with-dependencies.jar ufu.davigabriel.server.OrderPortalServer &
-java -Dlog4j.rootLogger=DEBUG -cp target/projetoFinalSD-1.0-SNAPSHOT-jar-with-dependencies.jar ufu.davigabriel.server.OrderPortalServer 60553 &
+mvn exec:java -Dexec.mainClass=ufu.davigabriel.server.OrderPortalServer -Dlog4j.rootLogger=DEBUG   &
+mvn exec:java -Dexec.mainClass=ufu.davigabriel.server.OrderPortalServer -Dexec.args="60553" -Dlog4j.rootLogger=DEBUG   &

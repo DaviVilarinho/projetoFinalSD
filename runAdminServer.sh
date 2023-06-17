@@ -1,4 +1,5 @@
 #!/bin/bash
+#
 
-java -cp target/projetoFinalSD-1.0-SNAPSHOT-jar-with-dependencies.jar ufu.davigabriel.server.AdminPortalServer &
-java -cp target/projetoFinalSD-1.0-SNAPSHOT-jar-with-dependencies.jar ufu.davigabriel.server.AdminPortalServer 25507 &
+mvn exec:java -Dexec.mainClass=ufu.davigabriel.server.AdminPortalServer -Dlog4j.rootLogger=DEBUG &
+mvn exec:java -Dexec.mainClass=ufu.davigabriel.server.AdminPortalServer -Dexec.args="25507" -Dlog4j.rootLogger=DEBUG &
