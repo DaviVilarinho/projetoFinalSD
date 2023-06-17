@@ -5,10 +5,7 @@ import org.junit.Ignore;
 import org.junit.Test;
 import ufu.davigabriel.client.AdminPortalClient;
 import ufu.davigabriel.client.OrderPortalClient;
-import ufu.davigabriel.models.OrderItemNative;
-import ufu.davigabriel.models.OrderNative;
-import ufu.davigabriel.models.ProductNative;
-import ufu.davigabriel.models.ReplyNative;
+import ufu.davigabriel.models.*;
 import ufu.davigabriel.server.AdminPortalGrpc;
 import ufu.davigabriel.server.ID;
 import ufu.davigabriel.server.OrderPortalGrpc;
@@ -39,11 +36,11 @@ public class OrderPortalServerTest {
     public static int TOLERANCE_MS = 100;
 
     public OrderPortalGrpc.OrderPortalBlockingStub getOrderBlockingStub() {
-        return OrderPortalGrpc.newBlockingStub(Grpc.newChannelBuilder(OrderPortalClient.TARGET_SERVER, InsecureChannelCredentials.create()).build());
+        return OrderPortalGrpc.newBlockingStub(Grpc.newChannelBuilder(String.format("127.0.0.1:%d", GlobalVarsService.ORDER_PORTAL_SERVER_BASE_PORT), InsecureChannelCredentials.create()).build());
     }
 
     public AdminPortalGrpc.AdminPortalBlockingStub getAdminBlockingStub() {
-        return AdminPortalGrpc.newBlockingStub(Grpc.newChannelBuilder(AdminPortalClient.TARGET_SERVER, InsecureChannelCredentials.create()).build());
+        return AdminPortalGrpc.newBlockingStub(Grpc.newChannelBuilder(String.format("127.0.0.1:%d", GlobalVarsService.ADMIN_PORTAL_SERVER_BASE_PORT), InsecureChannelCredentials.create()).build());
     }
 
     @Test

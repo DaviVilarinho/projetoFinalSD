@@ -1,5 +1,6 @@
 package ufu.davigabriel.services;
 
+import com.google.common.util.concurrent.ListenableFuture;
 import com.google.gson.Gson;
 import com.google.gson.JsonSyntaxException;
 import com.google.gson.reflect.TypeToken;
@@ -10,26 +11,21 @@ import org.slf4j.LoggerFactory;
 import ufu.davigabriel.exceptions.*;
 import ufu.davigabriel.models.GlobalVarsService;
 import ufu.davigabriel.models.OrderNative;
-import ufu.davigabriel.server.AdminPortalGrpc;
-import ufu.davigabriel.server.Client;
-import ufu.davigabriel.server.ID;
-import ufu.davigabriel.server.Order;
+import ufu.davigabriel.models.ProductNative;
+import ufu.davigabriel.server.*;
 import ufu.davigabriel.server.distributedDatabase.RatisClient;
 
 import java.nio.charset.Charset;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.Optional;
 
 public class OrderUpdaterMiddleware extends UpdaterMiddleware implements IOrderProxyDatabase {
     private static OrderUpdaterMiddleware instance;
     private OrderCacheService orderCacheService = OrderCacheService.getInstance();
     private Logger logger = LoggerFactory.getLogger(OrderUpdaterMiddleware.class);
-    private static AdminPortalGrpc.AdminPortalBlockingStub adminPortalBlockingStub;
 
     private OrderUpdaterMiddleware() {
-        String address = String.format("localhost:%d", GlobalVarsService.getInstance().getRandomAdminPortalPort());
-        System.out.println("Connecting to AdminPortalServer at " + address);
-        adminPortalBlockingStub = AdminPortalGrpc.newBlockingStub(Grpc.newChannelBuilder(address, InsecureChannelCredentials.create()).build());
     }
 
     public static OrderUpdaterMiddleware getInstance() {
@@ -38,10 +34,25 @@ public class OrderUpdaterMiddleware extends UpdaterMiddleware implements IOrderP
         }
         return instance;
     }
-    public void authenticateClient(String CID) throws UnauthorizedUserException {
-        Client client = adminPortalBlockingStub.retrieveClient(ID.newBuilder().setID(CID).build());
 
-        if("0".equals(client.getCID())) { throw new UnauthorizedUserException(); }
+    private void changeGlobalProductQuantity(String productId, int variation) {
+        new Thread(() -> {
+            try {
+                String address = String.format("localhost:%d", GlobalVarsService.getInstance().getRandomAdminPortalPort());
+                System.out.println("Connecting to AdminPortalServer at " + address);
+                AdminPortalGrpc.AdminPortalBlockingStub adminBlockingStub = AdminPortalGrpc.newBlockingStub(
+                        Grpc.newChannelBuilder(address, InsecureChannelCredentials.create()).build()).withWaitForReady();
+                ProductNative productToBeAdjusted = ProductNative.fromProduct(adminBlockingStub.retrieveProduct(ID.newBuilder().setID(productId).build()));
+                productToBeAdjusted.setQuantity(productToBeAdjusted.getQuantity() + variation);
+                adminBlockingStub.updateProduct(productToBeAdjusted.toProduct());
+            } catch (Exception exception) {
+                exception.printStackTrace();
+                System.err.println("Não foi possível atualizar " + productId + " para uma variação de " + variation);
+            }
+        }).start();
+    }
+
+    public void authenticateClient(String CID) throws UnauthorizedUserException {
     }
 
     @Override
@@ -53,8 +64,9 @@ public class OrderUpdaterMiddleware extends UpdaterMiddleware implements IOrderP
         return super.getStorePath(order.getOID());
     }
 
-    public String getClientOrdersBaseSavePath() { return "client_orders/"; }
-    public String getClientOrdersStorePath(String clientId) { return getClientOrdersBaseSavePath() + clientId; }
+    public String getClientOrdersBaseSavePath() {return "client_orders/";}
+
+    public String getClientOrdersStorePath(String clientId) {return getClientOrdersBaseSavePath() + clientId;}
 
     private RatisClient getRatisClientFromOrder(Order order) {
         return super.getRatisClients()[Integer.parseInt(order.getOID()) % 2];
@@ -90,13 +102,17 @@ public class OrderUpdaterMiddleware extends UpdaterMiddleware implements IOrderP
             throw new BadRequestException();
         }
         addClientOrderId(order);
+        new Thread(() -> OrderNative.fromOrder(order).getProducts().forEach(orderItemNative -> changeGlobalProductQuantity(orderItemNative.getPID(), -orderItemNative.getQuantity()))).start();
     }
 
     @Override
     public void updateOrder(Order order) throws NotFoundItemInPortalException, RatisClientException, BadRequestException, UnauthorizedUserException {
         Optional<Order> oldOrder = Optional.of(retrieveOrder(order));
+        throwIfClientUnauthorized(oldOrder, order);
+        OrderNative newOrderNative = OrderNative.fromOrder(order);
+        newOrderNative.getProducts().removeIf(item -> item.getQuantity() == 0);
         try {
-            throwIfClientUnauthorized(oldOrder, order);
+            order = newOrderNative.toOrder();
             if (!getRatisClientFromOrder(order).update(
                     getOrderStorePath(order),
                     order.toString()).isSuccess()) {
@@ -108,6 +124,17 @@ public class OrderUpdaterMiddleware extends UpdaterMiddleware implements IOrderP
             logger.debug("Erro json inválido: " + order);
             throw new BadRequestException();
         }
+        new Thread(() -> {
+            HashMap<String, Integer> auxiliarHashMapForProductQuantityRestoration = new HashMap<>();
+            OrderNative oldOrderNative = OrderNative.fromOrder(oldOrder.get());
+            oldOrderNative.getProducts().forEach(oldItem -> auxiliarHashMapForProductQuantityRestoration.put(
+                    oldItem.getPID(),
+                    auxiliarHashMapForProductQuantityRestoration.getOrDefault(oldItem.getPID(), 0) + oldItem.getQuantity()));
+            newOrderNative.getProducts().forEach(newItem -> auxiliarHashMapForProductQuantityRestoration.put(
+                    newItem.getPID(),
+                    auxiliarHashMapForProductQuantityRestoration.getOrDefault(newItem.getPID(), 0) - newItem.getQuantity()));
+            auxiliarHashMapForProductQuantityRestoration.forEach(this::changeGlobalProductQuantity);
+        }).start();
     }
 
     public Order retrieveOrder(Order order) throws NotFoundItemInPortalException, RatisClientException, BadRequestException {
@@ -141,9 +168,7 @@ public class OrderUpdaterMiddleware extends UpdaterMiddleware implements IOrderP
 
     @Override
     public void deleteOrder(ID id) throws NotFoundItemInPortalException, RatisClientException, BadRequestException {
-        if (!orderCacheService.hasOrder(id.getID())) {
-            retrieveOrder(id);
-        }
+        Order toDeleteOrder = retrieveOrder(id);
         try {
             if (!getRatisClientFromID(id.getID()).del(getStorePath(id.getID())).isSuccess()) {
                 throw new NotFoundItemInPortalException();
@@ -154,6 +179,11 @@ public class OrderUpdaterMiddleware extends UpdaterMiddleware implements IOrderP
             logger.debug("Erro json inválido: " + id);
             throw new BadRequestException();
         }
+        new Thread(() -> {
+            OrderNative.fromOrder(toDeleteOrder).getProducts().forEach(orderItemNative -> {
+                changeGlobalProductQuantity(orderItemNative.getPID(), orderItemNative.getQuantity());
+            });
+        }).start();
     }
 
     @Override
@@ -174,7 +204,8 @@ public class OrderUpdaterMiddleware extends UpdaterMiddleware implements IOrderP
         }
         try {
             String query = getRatisClientFromID(id.getID()).get(id.getID()).getMessage().getContent().toString(Charset.defaultCharset());
-            ArrayList<String> clientOrders = new Gson().fromJson(query, new TypeToken<ArrayList<String>>() {}.getType());
+            ArrayList<String> clientOrders = new Gson().fromJson(query, new TypeToken<ArrayList<String>>() {
+            }.getType());
             orderCacheService.updateClientOrders(id.getID(), clientOrders);
             return clientOrders;
         } catch (JsonSyntaxException jsonSyntaxException) {
@@ -227,5 +258,4 @@ public class OrderUpdaterMiddleware extends UpdaterMiddleware implements IOrderP
         clientOrders.remove(orderId);
         pushClientOrders(clientId, clientOrders);
     }
-
 }
