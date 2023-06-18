@@ -13,6 +13,10 @@ import utils.RandomUtils;
 
 import java.io.IOException;
 
+/*
+Para estes, basta executar antes o ./runOnlyReplicas.sh
+ou seja, basta que réplicas RATIS estejam de pé
+ */
 @Ignore
 public class AdminPortalServerTest {
     @Rule

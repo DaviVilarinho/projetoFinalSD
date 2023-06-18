@@ -3,8 +3,6 @@ import io.grpc.InsecureChannelCredentials;
 import org.junit.Assert;
 import org.junit.Ignore;
 import org.junit.Test;
-import ufu.davigabriel.client.AdminPortalClient;
-import ufu.davigabriel.client.OrderPortalClient;
 import ufu.davigabriel.models.*;
 import ufu.davigabriel.server.AdminPortalGrpc;
 import ufu.davigabriel.server.ID;
@@ -26,9 +24,8 @@ mas pode ignorar.
  */
 
 /*
-Para executar estes teste, basta executar o mosquitto e o arquivo "servers_start
-.sh". Isso se deve ao fato de que as funcionalidades presentes no
-OrderPortalServer dependem, em partes, das funcionalidades do AdminPortalServer.
+Para executar estes testes, basta executar TODAS as réplicas & Servers,
+tem o script ./runAllServers.sh que executam nas portas padrões
  */
 @Ignore
 public class OrderPortalServerTest {

@@ -26,10 +26,15 @@ public class OrderPortalServer {
                 port = Integer.parseInt(args[0]);
                 if (port < 1024 || port > 65536) throw new NumberFormatException("Porta com numero invalido");
             }
+            if (args.length > 1) { // aceita dinamicamente que conecta ao OrderPortalServer
+                GlobalVarsService.ADMIN_PORTAL_SERVER_BASE_PORT = Integer.parseInt(args[1]);
+                if (GlobalVarsService.ADMIN_PORTAL_SERVER_BASE_PORT < 1024 || GlobalVarsService.ADMIN_PORTAL_SERVER_BASE_PORT  > 65536) throw new NumberFormatException("Porta com numero invalido");
+            }
         } catch (NumberFormatException numberFormatException) {
             System.out.println("Se quiser conectar em alguma porta, por favor" +
                     " insira o argumento como uma string representando um int" +
                     " valido entre 1024 e 65535");
+            System.exit(-1);
         } finally {
             System.out.println("Conectara em: " + port);
         }

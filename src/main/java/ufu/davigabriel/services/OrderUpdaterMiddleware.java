@@ -16,9 +16,12 @@ import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Optional;
-import java.util.stream.Collectors;
 
+/**
+ * {@link OrderUpdaterMiddleware}
+ * Aqui a classe tem como objetivo controlar as requisições para a Cache e para o Ratis
+ * Tem que manter controle de versão, relação de autenticação e validação se o produto atualizado está ok
+ */
 public class OrderUpdaterMiddleware extends UpdaterMiddleware implements IOrderProxyDatabase {
     private static OrderUpdaterMiddleware instance;
     private OrderCacheService orderCacheService = OrderCacheService.getInstance();
@@ -39,11 +42,28 @@ public class OrderUpdaterMiddleware extends UpdaterMiddleware implements IOrderP
         return instance;
     }
 
+    /*  este método tem sérios problemas de eficiência e mesmo de consistência
+        pelo tempo de desenvolvimento do projeto não conseguimos mudar, mas infelizmente
+        no modo que está ele repete requisições no throwBadRequest e no change.
+
+        Qualquer mudança era arriscada, então prefirimos não fazer.
+
+        O problema de consistência está em:
+        -   E se falhar?
+        -   (menos pior) é possível que o client note o seguinte cenário:
+            -   OrderClient ---cria order com PID 1 --> Retorna Order ok, atualiza Produto no AdminPortalServer
+            -   AdminClient ---Me veja informacoes do produto 1 --> Retorna Produto Desatualizado
+            isso se deve à presença de cache, mas pelos testes sempre após o TTL é validado, mas pode ser que não... Assim como a Amazon na vida real.
+     */
     private void changeGlobalProductQuantity(String productId, int variation) {
         try {
+            // acha produto do servidor de admin
             ProductNative productToBeAdjusted = ProductNative.fromProduct(adminBlockingStub.retrieveProduct(ID.newBuilder().setID(productId).build()));
+            // pega qual hash dessa versao
             productToBeAdjusted.setUpdatedVersionHash(productToBeAdjusted.getHash());
+            // atualiza pra variacao
             productToBeAdjusted.setQuantity(productToBeAdjusted.getQuantity() + variation);
+            // reenvia
             Reply reply = adminBlockingStub.updateProduct(productToBeAdjusted.toProduct());
             System.out.println("O status da atualização do produto " + productToBeAdjusted.getPID() + ": " + ReplyNative.fromReply(reply).name());
         } catch (Exception exception) {
@@ -54,6 +74,7 @@ public class OrderUpdaterMiddleware extends UpdaterMiddleware implements IOrderP
 
     private ProductNative throwBadRequestIfVariationGeneratesInvalidQuantity(String productId, int variation) throws BadRequestException {
         try {
+            // mesma coisa que o anterior, mas só importa variações que diminuam abaixo de zero e não chama update
             ProductNative productToBeAdjusted = ProductNative.fromProduct(adminBlockingStub.retrieveProduct(ID.newBuilder().setID(productId).build()));
             if (-variation > productToBeAdjusted.getQuantity()) { // - porque positivo é algo bom, e sempre é possível, negativo que não
                 throw new BadRequestException("Essa requisição violará a quantidade do produto " + productId);
@@ -73,7 +94,7 @@ public class OrderUpdaterMiddleware extends UpdaterMiddleware implements IOrderP
 
         System.out.println("Encontrado um cliente do portal admin: " + client.toString());
 
-        if("0".equals(client.getCID())) throw new UnauthorizedUserException();
+        if("0".equals(client.getCID())) throw new UnauthorizedUserException(); // verifica se existe
     }
 
     @Override
@@ -130,16 +151,17 @@ public class OrderUpdaterMiddleware extends UpdaterMiddleware implements IOrderP
             System.out.println("Erro json inválido: " + order);
             throw new BadRequestException();
         }
-        addClientOrderId(order);
+        addClientOrderId(order); // lembrar de colocar na listinha de ID's
+        // lembrar de atualizar produtos
         OrderNative.fromOrder(order).getProducts().forEach(orderItemNative -> changeGlobalProductQuantity(orderItemNative.getPID(), -orderItemNative.getQuantity()));
     }
 
     @Override
     public void updateOrder(Order order) throws NotFoundItemInPortalException, RatisClientException, BadRequestException, UnauthorizedUserException, IllegalVersionPortalItemException {
-        Order oldOrder = retrieveOrder(order);
-        authenticateClient(order.getCID());
-        orderCacheService.throwIfNotUpdatable(OrderNative.fromOrder(order));
-        throwIfCIDIsDifferentFromOldOrderCID(oldOrder, order);
+        Order oldOrder = retrieveOrder(order); // pega se existe, se não estoura
+        authenticateClient(order.getCID()); // verifica que é válido CID
+        orderCacheService.throwIfNotUpdatable(OrderNative.fromOrder(order)); // verifica se bate o hash com old
+        throwIfCIDIsDifferentFromOldOrderCID(oldOrder, order); // nao permitir mudar cid
         OrderNative oldOrderNative = OrderNative.fromOrder(oldOrder);
         OrderNative newOrderNative = OrderNative.fromOrder(order);
 
@@ -159,7 +181,7 @@ public class OrderUpdaterMiddleware extends UpdaterMiddleware implements IOrderP
             throwBadRequestIfVariationGeneratesInvalidQuantity(productEntry.getKey(), productEntry.getValue());
         }
         System.out.println("Nenhum conflito de quantidade em " + order.getOID() + " estimado, prosseguindo para update");
-        newOrderNative.getProducts().removeIf(item -> item.getQuantity() == 0);
+        newOrderNative.getProducts().removeIf(item -> item.getQuantity() == 0);// tirar zeros
         try {
             order = newOrderNative.toOrder();
             if (!getRatisClientFromOrder(order).update(
@@ -167,6 +189,7 @@ public class OrderUpdaterMiddleware extends UpdaterMiddleware implements IOrderP
                     new Gson().toJson(order)).isSuccess()) {
                 throw new NotFoundItemInPortalException();
             }
+            // se deu pra colocar no Ratis, atualiza na cache
             orderCacheService.updateOrder(order);
         } catch (IllegalStateException | NumberFormatException | NullPointerException illegalStateException) {
             illegalStateException.printStackTrace();
@@ -174,6 +197,7 @@ public class OrderUpdaterMiddleware extends UpdaterMiddleware implements IOrderP
             throw new BadRequestException();
         }
         HashMap<String, Integer> auxiliarHashMapForProductQuantityRestoration2 = new HashMap<>();
+        // atualizar cada produto
         oldOrderNative.getProducts().forEach(oldItem -> auxiliarHashMapForProductQuantityRestoration2.put(
                 oldItem.getPID(),
                 auxiliarHashMapForProductQuantityRestoration2.getOrDefault(oldItem.getPID(), 0) + oldItem.getQuantity()));
@@ -189,12 +213,14 @@ public class OrderUpdaterMiddleware extends UpdaterMiddleware implements IOrderP
 
     @Override
     public Order retrieveOrder(ID id) throws NotFoundItemInPortalException, RatisClientException, BadRequestException {
+        // verifica se tem na cache & funciona
         try {
             return orderCacheService.retrieveOrder(id);
         } catch (NotFoundItemInPortalException notFoundItemInPortalException) {
             System.out.println("ID não encontrado, tentando buscar no bd " + id);
         }
 
+        // se não era possível pega do db
         try {
             String queryOrder = getRatisClientFromID(id.getID()).get(getStorePath(id.getID())).getMessage().getContent().toString(Charset.defaultCharset());
             System.out.println("Banco encontrou order: " + queryOrder);
@@ -203,7 +229,7 @@ public class OrderUpdaterMiddleware extends UpdaterMiddleware implements IOrderP
                 throw new NotFoundItemInPortalException(id.getID());
             }
             Order order = new Gson().fromJson(onlyJson, Order.class);
-            orderCacheService.createOrder(order);
+            orderCacheService.createOrder(order); // se achou manda pra cache
             return order;
         } catch (JsonSyntaxException | ArrayIndexOutOfBoundsException jsonSyntaxException) {
             throw new NotFoundItemInPortalException();
@@ -292,9 +318,9 @@ public class OrderUpdaterMiddleware extends UpdaterMiddleware implements IOrderP
             System.out.println("Cliente não havia ordens");
             clientOrders = new ArrayList<>();
         }
-        clientOrders.add(orderId);
-        pushClientOrders(clientId, clientOrders);
-        orderCacheService.setClientOrderId(orderId, clientOrders);
+        clientOrders.add(orderId); // adiciona no que tinha
+        pushClientOrders(clientId, clientOrders); // joga no ratis
+        orderCacheService.setClientOrderId(orderId, clientOrders); // seta mesmo, não é add
     }
 
     @Override
@@ -307,8 +333,8 @@ public class OrderUpdaterMiddleware extends UpdaterMiddleware implements IOrderP
             clientOrders = new ArrayList<>();
         }
 
-        ArrayList<String> newClientOrders = new ArrayList<>(clientOrders.stream().filter(order -> !orderId.equals(order)).toList());
-        pushClientOrders(clientId, newClientOrders);
-        orderCacheService.setClientOrderId(clientId, newClientOrders);
+        ArrayList<String> newClientOrders = new ArrayList<>(clientOrders.stream().filter(order -> !orderId.equals(order)).toList()); // remove no que tinha
+        pushClientOrders(clientId, newClientOrders); // joga no ratis
+        orderCacheService.setClientOrderId(clientId, newClientOrders); // seta na cache
     }
 }
