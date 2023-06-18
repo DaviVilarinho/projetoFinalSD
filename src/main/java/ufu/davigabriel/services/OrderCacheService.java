@@ -136,6 +136,10 @@ public class OrderCacheService extends BaseCacheService implements IOrderProxyDa
         clientOrdersMap.get(clientId).add(orderId);
     }
 
+    public void setClientOrderId(String clientId, ArrayList<String> orders) {
+        clientOrdersMap.put(clientId, orders);
+    }
+
     public void removeClientOrderId(ID clientID, ID orderID) {
         removeClientOrderId(clientID.getID(), orderID.getID());
     }

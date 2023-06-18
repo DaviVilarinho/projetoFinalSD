@@ -155,9 +155,9 @@ public class OrderPortalServer {
         public void retrieveClientOrders(ID request, StreamObserver<Order> responseObserver) {
             try {
                 orderUpdaterMiddleware.retrieveClientOrders(request).forEach(responseObserver::onNext);
-                System.out.println("DELETADO: " + request);
+                System.out.println("Listado " + request);
             } catch (PortalException exception) {
-                System.out.println("NÃO FOI POSSÍVEL COLOCAR ORDEM DO USER " + request);
+                System.out.println("Não foi possível listar " + request);
                 exception.printStackTrace();
                 exception.replyError(responseObserver);
             } finally {

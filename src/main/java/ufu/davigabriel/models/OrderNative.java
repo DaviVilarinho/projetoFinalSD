@@ -15,7 +15,7 @@ import java.util.ArrayList;
 @Setter
 @Getter
 @ToString
-public class OrderNative extends BaseCacheService implements Updatable {
+public class OrderNative implements Updatable {
     private String OID;
     private String CID;
     private ArrayList<OrderItemNative> products;

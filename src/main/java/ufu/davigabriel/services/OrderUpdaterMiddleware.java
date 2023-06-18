@@ -17,6 +17,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 public class OrderUpdaterMiddleware extends UpdaterMiddleware implements IOrderProxyDatabase {
     private static OrderUpdaterMiddleware instance;
@@ -59,7 +60,7 @@ public class OrderUpdaterMiddleware extends UpdaterMiddleware implements IOrderP
             }
             return productToBeAdjusted;
         } catch (Exception exception) {
-            if (exception.getClass() == BadRequestException.class) {
+            if (exception.getClass() != BadRequestException.class) {
                 exception.printStackTrace();
                 throw new BadRequestException("Não foi possível verificar variação causada pela order change request");
             }
@@ -229,6 +230,7 @@ public class OrderUpdaterMiddleware extends UpdaterMiddleware implements IOrderP
             System.out.println("Erro json inválido: " + id);
             throw new BadRequestException();
         }
+        removeClientOrderId(toDeleteOrder.getCID(), id.getID());
         OrderNative.fromOrder(toDeleteOrder).getProducts().forEach(orderItemNative -> {
             changeGlobalProductQuantity(orderItemNative.getPID(), orderItemNative.getQuantity());
         });
@@ -292,6 +294,7 @@ public class OrderUpdaterMiddleware extends UpdaterMiddleware implements IOrderP
         }
         clientOrders.add(orderId);
         pushClientOrders(clientId, clientOrders);
+        orderCacheService.setClientOrderId(orderId, clientOrders);
     }
 
     @Override
@@ -303,7 +306,9 @@ public class OrderUpdaterMiddleware extends UpdaterMiddleware implements IOrderP
             System.out.println("Cliente não havia ordens, nada a remover");
             clientOrders = new ArrayList<>();
         }
-        clientOrders.remove(orderId);
-        pushClientOrders(clientId, clientOrders);
+
+        ArrayList<String> newClientOrders = new ArrayList<>(clientOrders.stream().filter(order -> !orderId.equals(order)).toList());
+        pushClientOrders(clientId, newClientOrders);
+        orderCacheService.setClientOrderId(clientId, newClientOrders);
     }
 }

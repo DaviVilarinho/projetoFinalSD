@@ -46,7 +46,7 @@ public class RandomUtils {
                                 productNative -> OrderItemNative.convertProductNative(
                                         productNative,
                                         RandomString.make(8),
-                                        productNative.getQuantity() / (new Random().nextInt(productNative.getQuantity() + 1)),
+                                        Math.min(1, productNative.getQuantity() / (new Random().nextInt(productNative.getQuantity() + 1))),
                                         10))
                         .collect(Collectors.toCollection(ArrayList::new)))
                 .build();

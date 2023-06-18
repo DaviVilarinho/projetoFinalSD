@@ -63,6 +63,7 @@ public class OrderPortalClient {
 
             while (!OrderPortalOption.SAIR.equals(orderPortalOption)) {
                 System.out.println("^^--__");
+                System.out.println("Ordens com versões que já lidou: " + myHashes.keySet());
                 System.out.println("Opcoes:");
                 Arrays.stream(OrderPortalOption.values()).forEach(System.out::println);
 
@@ -153,10 +154,10 @@ public class OrderPortalClient {
                         else System.out.println("PEDIDO REMOVIDO");
                     }
                     case MEUS_PEDIDOS -> {
-                        ArrayList<OrderNative> clientOrders = retrieveClientOrders(orderPortalClient.blockingStub, loggedClientId);
+                        Set<String> clientOrders = retrieveClientOrders(orderPortalClient.blockingStub, loggedClientId);
                         System.out.println("PEDIDOS ASSOCIADOS AO CLIENTE:");
-                        clientOrders.forEach(orderNative -> {
-                            Optional.ofNullable(orderNative).ifPresentOrElse(System.out::println, () -> System.out.println("Nada a mostrar..."));
+                        clientOrders.forEach(orders -> {
+                            System.out.println(orders);
                         });
                         System.out.println("------todos-pedidos-enumerados" +
                                 "------");
@@ -199,9 +200,10 @@ public class OrderPortalClient {
         return ReplyNative.fromReply(blockingStub.deleteOrder(ID.newBuilder().setID(orderId).build()));
     }
 
-    static private ArrayList<OrderNative> retrieveClientOrders(OrderPortalGrpc.OrderPortalBlockingStub blockingStub, String clientId) {
-        ArrayList<OrderNative> clientOrders = new ArrayList<>();
-        blockingStub.retrieveClientOrders(ID.newBuilder().setID(clientId).build()).forEachRemaining(clientOrder -> clientOrders.add(OrderNative.fromOrder(clientOrder)));
+    static private Set<String> retrieveClientOrders(OrderPortalGrpc.OrderPortalBlockingStub blockingStub, String clientId) {
+        Set<String> clientOrders = new HashSet<>();
+        blockingStub.retrieveClientOrders(ID.newBuilder().setID(clientId).build())
+                .forEachRemaining(clientOrder -> clientOrders.add(OrderNative.fromOrder(clientOrder).toJson()));
         return clientOrders;
     }
 
@@ -220,7 +222,7 @@ public class OrderPortalClient {
                 orderNative.getOID(), ""));
         ReplyNative replyNative = ReplyNative.fromReply(blockingStub.updateOrder(orderNative.toOrder()));
         myHashes.put(orderNative.getOID(), orderNative.getHash());
-        return ReplyNative.fromReply(blockingStub.updateOrder(orderNative.toOrder()));
+        return replyNative;
     }
 
     private String login(AdminPortalGrpc.AdminPortalBlockingStub blockingStub, Scanner scanner) {
