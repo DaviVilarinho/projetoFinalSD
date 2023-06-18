@@ -8,15 +8,14 @@ import io.grpc.InsecureChannelCredentials;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import ufu.davigabriel.exceptions.*;
-import ufu.davigabriel.models.GlobalVarsService;
-import ufu.davigabriel.models.OrderNative;
-import ufu.davigabriel.models.ProductNative;
+import ufu.davigabriel.models.*;
 import ufu.davigabriel.server.*;
 import ufu.davigabriel.server.distributedDatabase.RatisClient;
 
 import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Map;
 import java.util.Optional;
 
 public class OrderUpdaterMiddleware extends UpdaterMiddleware implements IOrderProxyDatabase {
@@ -45,10 +44,26 @@ public class OrderUpdaterMiddleware extends UpdaterMiddleware implements IOrderP
             productToBeAdjusted.setUpdatedVersionHash(productToBeAdjusted.getHash());
             productToBeAdjusted.setQuantity(productToBeAdjusted.getQuantity() + variation);
             Reply reply = adminBlockingStub.updateProduct(productToBeAdjusted.toProduct());
-            System.out.println("O status da atualização do produto " + productId + ": " + reply.getDescription());
+            System.out.println("O status da atualização do produto " + productToBeAdjusted.getPID() + ": " + ReplyNative.fromReply(reply).name());
         } catch (Exception exception) {
             exception.printStackTrace();
             System.err.println("Não foi possível atualizar " + productId + " para uma variação de " + variation);
+        }
+    }
+
+    private ProductNative throwBadRequestIfVariationGeneratesInvalidQuantity(String productId, int variation) throws BadRequestException {
+        try {
+            ProductNative productToBeAdjusted = ProductNative.fromProduct(adminBlockingStub.retrieveProduct(ID.newBuilder().setID(productId).build()));
+            if (-variation > productToBeAdjusted.getQuantity()) { // - porque positivo é algo bom, e sempre é possível, negativo que não
+                throw new BadRequestException("Essa requisição violará a quantidade do produto " + productId);
+            }
+            return productToBeAdjusted;
+        } catch (Exception exception) {
+            if (exception.getClass() == BadRequestException.class) {
+                exception.printStackTrace();
+                throw new BadRequestException("Não foi possível verificar variação causada pela order change request");
+            }
+            throw exception;
         }
     }
 
@@ -82,11 +97,9 @@ public class OrderUpdaterMiddleware extends UpdaterMiddleware implements IOrderP
         return super.getRatisClients()[Integer.parseInt(id) % 2];
     }
 
-    public void throwIfCIDIsDifferentFromOldOrderCID(Optional<Order> optionalOldOrder, Order newOrder) throws UnauthorizedUserException {
-        if (optionalOldOrder.isPresent()) {
-            if (!optionalOldOrder.get().getCID().equals(newOrder.getCID())) {
-                throw new UnauthorizedUserException();
-            }
+    public void throwIfCIDIsDifferentFromOldOrderCID(Order optionalOldOrder, Order newOrder) throws UnauthorizedUserException {
+        if (!optionalOldOrder.getCID().equals(newOrder.getCID())) {
+            throw new UnauthorizedUserException();
         }
     }
 
@@ -106,6 +119,10 @@ public class OrderUpdaterMiddleware extends UpdaterMiddleware implements IOrderP
                                                     new Gson().toJson(order)).isSuccess()) {
                 throw new DuplicatePortalItemException();
             }
+            for (OrderItemNative orderItemNative : OrderNative.fromOrder(order).getProducts()) {
+                throwBadRequestIfVariationGeneratesInvalidQuantity(orderItemNative.getPID(), -orderItemNative.getQuantity());
+            }
+            System.out.println("Nenhum conflito de quantidade em " + order.getOID() + " estimado, prosseguindo para update");
             orderCacheService.createOrder(order);
         } catch (IllegalStateException | NumberFormatException | NullPointerException illegalStateException) {
             illegalStateException.printStackTrace();
@@ -118,11 +135,29 @@ public class OrderUpdaterMiddleware extends UpdaterMiddleware implements IOrderP
 
     @Override
     public void updateOrder(Order order) throws NotFoundItemInPortalException, RatisClientException, BadRequestException, UnauthorizedUserException, IllegalVersionPortalItemException {
-        Optional<Order> oldOrder = Optional.of(retrieveOrder(order));
+        Order oldOrder = retrieveOrder(order);
         authenticateClient(order.getCID());
         orderCacheService.throwIfNotUpdatable(OrderNative.fromOrder(order));
         throwIfCIDIsDifferentFromOldOrderCID(oldOrder, order);
+        OrderNative oldOrderNative = OrderNative.fromOrder(oldOrder);
         OrderNative newOrderNative = OrderNative.fromOrder(order);
+
+        /* valida se não vai dar erro a mudança */
+        HashMap<String, Integer> auxiliarHashMapForProductQuantityRestoration = new HashMap<>();
+        for (OrderItemNative oldItem : oldOrderNative.getProducts()) {
+            auxiliarHashMapForProductQuantityRestoration.put(
+                    oldItem.getPID(),
+                    auxiliarHashMapForProductQuantityRestoration.getOrDefault(oldItem.getPID(), 0) + oldItem.getQuantity());
+        }
+        for (OrderItemNative newItem : newOrderNative.getProducts()) {
+            auxiliarHashMapForProductQuantityRestoration.put(
+                    newItem.getPID(),
+                    auxiliarHashMapForProductQuantityRestoration.getOrDefault(newItem.getPID(), 0) - newItem.getQuantity());
+        }
+        for (Map.Entry<String, Integer> productEntry : auxiliarHashMapForProductQuantityRestoration.entrySet()) {
+            throwBadRequestIfVariationGeneratesInvalidQuantity(productEntry.getKey(), productEntry.getValue());
+        }
+        System.out.println("Nenhum conflito de quantidade em " + order.getOID() + " estimado, prosseguindo para update");
         newOrderNative.getProducts().removeIf(item -> item.getQuantity() == 0);
         try {
             order = newOrderNative.toOrder();
@@ -137,15 +172,14 @@ public class OrderUpdaterMiddleware extends UpdaterMiddleware implements IOrderP
             System.out.println("Erro json inválido: " + order);
             throw new BadRequestException();
         }
-        HashMap<String, Integer> auxiliarHashMapForProductQuantityRestoration = new HashMap<>();
-        OrderNative oldOrderNative = OrderNative.fromOrder(oldOrder.get());
-        oldOrderNative.getProducts().forEach(oldItem -> auxiliarHashMapForProductQuantityRestoration.put(
+        HashMap<String, Integer> auxiliarHashMapForProductQuantityRestoration2 = new HashMap<>();
+        oldOrderNative.getProducts().forEach(oldItem -> auxiliarHashMapForProductQuantityRestoration2.put(
                 oldItem.getPID(),
-                auxiliarHashMapForProductQuantityRestoration.getOrDefault(oldItem.getPID(), 0) + oldItem.getQuantity()));
-        newOrderNative.getProducts().forEach(newItem -> auxiliarHashMapForProductQuantityRestoration.put(
+                auxiliarHashMapForProductQuantityRestoration2.getOrDefault(oldItem.getPID(), 0) + oldItem.getQuantity()));
+        newOrderNative.getProducts().forEach(newItem -> auxiliarHashMapForProductQuantityRestoration2.put(
                 newItem.getPID(),
-                auxiliarHashMapForProductQuantityRestoration.getOrDefault(newItem.getPID(), 0) - newItem.getQuantity()));
-        auxiliarHashMapForProductQuantityRestoration.forEach(this::changeGlobalProductQuantity);
+                auxiliarHashMapForProductQuantityRestoration2.getOrDefault(newItem.getPID(), 0) - newItem.getQuantity()));
+        auxiliarHashMapForProductQuantityRestoration2.forEach(this::changeGlobalProductQuantity);
     }
 
     public Order retrieveOrder(Order order) throws NotFoundItemInPortalException, RatisClientException, BadRequestException {

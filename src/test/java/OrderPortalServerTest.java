@@ -33,7 +33,7 @@ OrderPortalServer dependem, em partes, das funcionalidades do AdminPortalServer.
 @Ignore
 public class OrderPortalServerTest {
 
-    public static int TOLERANCE_MS = 100;
+    public static int TOLERANCE_MS = 350;
 
     public OrderPortalGrpc.OrderPortalBlockingStub getOrderBlockingStub() {
         return OrderPortalGrpc.newBlockingStub(Grpc.newChannelBuilder(String.format("127.0.0.1:%d", GlobalVarsService.ORDER_PORTAL_SERVER_BASE_PORT), InsecureChannelCredentials.create()).build());
@@ -128,6 +128,7 @@ public class OrderPortalServerTest {
         Assert.assertEquals(randomOrderTriple.getRandomOrderNative().getCID(), randomOrderTriple.getRandomClientNative().getCID());
         Assert.assertEquals(orderPortalBlockingStub.createOrder(randomOrderTriple.getRandomOrderNative().toOrder()).getError(), ReplyNative.SUCESSO.getError());
 
+        Thread.sleep(TOLERANCE_MS);
         for (ProductNative productNative : randomOrderTriple.getRandomProductsNative()) {
             Product productAfterUpdate = adminPortalBlockingStub.retrieveProduct(ID.newBuilder().setID(productNative.getPID()).build());
             Assert.assertNotEquals(productAfterUpdate.getPID(), "0");

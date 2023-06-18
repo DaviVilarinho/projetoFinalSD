@@ -17,6 +17,7 @@ public class OrderPortalClient {
     public static String TARGET_SERVER = String.format("%s:%d", HOST, SERVER_PORT);
     private static final Scanner scanner = new Scanner(System.in);
     private final OrderPortalGrpc.OrderPortalBlockingStub blockingStub;
+    private static final HashMap<String, String> myHashes = new HashMap<>();
 
     public OrderPortalClient(Channel channel) {
         this.blockingStub = OrderPortalGrpc.newBlockingStub(channel);
@@ -178,19 +179,23 @@ public class OrderPortalClient {
     }
 
     static private ReplyNative createOrder(OrderPortalGrpc.OrderPortalBlockingStub blockingStub, OrderNative orderNative) {
+        myHashes.put(orderNative.getOID(), orderNative.getHash());
         return ReplyNative.fromReply(blockingStub.createOrder(orderNative.toOrder()));
     }
 
-    static private Optional<OrderNative> retrieveOrder(OrderPortalGrpc.OrderPortalBlockingStub blockingStub, String OrderId) {
-        Order order = blockingStub.retrieveOrder(ID.newBuilder().setID(OrderId).build());
+    static private Optional<OrderNative> retrieveOrder(OrderPortalGrpc.OrderPortalBlockingStub blockingStub, String orderId) {
+        Order order = blockingStub.retrieveOrder(ID.newBuilder().setID(orderId).build());
         Optional<OrderNative> optOrder = Optional.empty();
-        if (!"0".equals(order.getCID())) {
-            optOrder = Optional.of(OrderNative.fromOrder(order));
+        if (!"0".equals(order.getOID())) {
+            OrderNative orderNative = OrderNative.fromOrder(order);
+            optOrder = Optional.of(orderNative);
+            myHashes.put(orderId, orderNative.getHash());
         }
         return optOrder;
     }
 
     static private ReplyNative removeOrder(OrderPortalGrpc.OrderPortalBlockingStub blockingStub, String orderId) {
+        myHashes.remove(orderId);
         return ReplyNative.fromReply(blockingStub.deleteOrder(ID.newBuilder().setID(orderId).build()));
     }
 
@@ -201,6 +206,20 @@ public class OrderPortalClient {
     }
 
     static private ReplyNative updateOrder(OrderPortalGrpc.OrderPortalBlockingStub blockingStub, OrderNative orderNative) {
+        if (!myHashes.containsKey(orderNative.getOID())) {
+            Optional<OrderNative> optionalOrderNative = retrieveOrder(blockingStub,
+                                                                      orderNative.getOID());
+            optionalOrderNative.ifPresent((oldOrder) -> {
+                System.out.println("Como você ainda não tinha se relacionado com o OID "
+                                           + orderNative.getOID()
+                                           + ", a atualização será baseada nesta ordem " + oldOrder.toJson());
+                if (!"0".equals(oldOrder.getOID())) {myHashes.put(oldOrder.getOID(), oldOrder.getHash());}
+            });
+        }
+        orderNative.setUpdatedVersionHash(myHashes.getOrDefault(
+                orderNative.getOID(), ""));
+        ReplyNative replyNative = ReplyNative.fromReply(blockingStub.updateOrder(orderNative.toOrder()));
+        myHashes.put(orderNative.getOID(), orderNative.getHash());
         return ReplyNative.fromReply(blockingStub.updateOrder(orderNative.toOrder()));
     }
 
