@@ -1,5 +1,3 @@
-[NOSSO VÍDEO](https://youtu.be/49kOjDBGJcU)
-
 # Para executar o sistema:
 
     1° - Em um terminal, executar o comando 'runAllServers.sh'.
