@@ -43,11 +43,12 @@ public class ProductUpdaterMiddleware extends UpdaterMiddleware implements IProd
             throw new DuplicatePortalItemException("Produto já existe");
         }
         try {
-            if (!getRatisClientFromID(product.getPID()).add(getProductStorePath(product), ProductNative.fromProduct(product).toJson()).isSuccess()) {
+            if (!getRatisClientFromID(product.getPID()).add(getProductStorePath(product),
+                                                            new Gson().toJson(product)).isSuccess()) {
                 throw new DuplicatePortalItemException();
             }
             productCacheService.createProduct(product);
-        } catch (IllegalStateException illegalStateException) {
+        } catch (IllegalStateException | NumberFormatException illegalStateException) {
             illegalStateException.printStackTrace();
             System.out.println("Erro json inválido: " + product);
             throw new BadRequestException();
@@ -60,11 +61,11 @@ public class ProductUpdaterMiddleware extends UpdaterMiddleware implements IProd
         productCacheService.throwIfNotUpdatable(ProductNative.fromProduct(product));
         try {
             if (!getRatisClientFromID(product.getPID()).update(
-                    getProductStorePath(product), product.toString()).isSuccess()) {
+                    getProductStorePath(product), new Gson().toJson(product)).isSuccess()) {
                 throw new NotFoundItemInPortalException();
             }
             productCacheService.updateProduct(product);
-        } catch (IllegalStateException illegalStateException) {
+        } catch (IllegalStateException | NumberFormatException illegalStateException) {
             illegalStateException.printStackTrace();
             System.out.println("Erro json inválido: " + product);
             throw new BadRequestException();
@@ -95,7 +96,7 @@ public class ProductUpdaterMiddleware extends UpdaterMiddleware implements IProd
             return product;
         } catch (JsonSyntaxException jsonSyntaxException) {
             throw new NotFoundItemInPortalException();
-        } catch (IllegalStateException illegalStateException) {
+        } catch (IllegalStateException | NumberFormatException illegalStateException) {
             illegalStateException.printStackTrace();
             System.out.println("Erro json inválido: " + id);
             throw new BadRequestException();
@@ -113,7 +114,7 @@ public class ProductUpdaterMiddleware extends UpdaterMiddleware implements IProd
                 throw new NotFoundItemInPortalException();
             }
             productCacheService.deleteProduct(id);
-        } catch (IllegalStateException illegalStateException) {
+        } catch (IllegalStateException | NumberFormatException illegalStateException) {
             illegalStateException.printStackTrace();
             System.out.println("Erro json inválido: " + id);
             throw new BadRequestException();

@@ -47,7 +47,7 @@ public class ClientUpdaterMiddleware extends UpdaterMiddleware implements IClien
                 throw new DuplicatePortalItemException();
             }
             clientCacheService.createClient(client);
-        } catch (IllegalStateException illegalStateException) {
+        } catch (IllegalStateException | NumberFormatException illegalStateException) {
             illegalStateException.printStackTrace();
             System.out.println("Erro json inválido: " + client);
             throw new BadRequestException();
@@ -64,7 +64,7 @@ public class ClientUpdaterMiddleware extends UpdaterMiddleware implements IClien
                 throw new NotFoundItemInPortalException();
             }
             clientCacheService.updateClient(client);
-        } catch (IllegalStateException illegalStateException) {
+        } catch (IllegalStateException | NumberFormatException illegalStateException) {
             illegalStateException.printStackTrace();
             System.out.println("Erro json inválido: " + client);
             throw new BadRequestException();
@@ -97,7 +97,7 @@ public class ClientUpdaterMiddleware extends UpdaterMiddleware implements IClien
             System.out.println("Erro no parse do json, provavelmente get:null");
             jsonSyntaxException.printStackTrace();
             throw new NotFoundItemInPortalException();
-        } catch (IllegalStateException illegalStateException) {
+        } catch (IllegalStateException | NumberFormatException illegalStateException) {
             illegalStateException.printStackTrace();
             System.out.println("Erro json inválido: " + id);
             throw new BadRequestException();
@@ -115,7 +115,7 @@ public class ClientUpdaterMiddleware extends UpdaterMiddleware implements IClien
                 throw new NotFoundItemInPortalException();
             }
             clientCacheService.deleteClient(id);
-        } catch (IllegalStateException illegalStateException) {
+        } catch (IllegalStateException | NumberFormatException illegalStateException) {
             illegalStateException.printStackTrace();
             System.out.println("Erro json inválido: " + id);
             throw new BadRequestException();
