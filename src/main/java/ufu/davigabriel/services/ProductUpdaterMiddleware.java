@@ -83,7 +83,12 @@ public class ProductUpdaterMiddleware extends UpdaterMiddleware implements IProd
 
         try {
             String queryProduct = getRatisClientFromID(id.getID()).get(getStorePath(id.getID())).getMessage().getContent().toString(Charset.defaultCharset());
-            Product product = ProductNative.fromJson(queryProduct).toProduct();
+            System.out.println("Banco encontrou product: " + queryProduct);
+            String onlyJson = queryProduct.split(":", 2)[1];
+            if ("null".equals(onlyJson)) {
+                throw new NotFoundItemInPortalException(id.getID());
+            }
+            Product product = ProductNative.fromJson(onlyJson).toProduct();
             productCacheService.createProduct(product);
             return product;
         } catch (JsonSyntaxException jsonSyntaxException) {

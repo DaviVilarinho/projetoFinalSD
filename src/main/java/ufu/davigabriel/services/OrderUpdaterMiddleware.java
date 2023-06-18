@@ -161,10 +161,15 @@ public class OrderUpdaterMiddleware extends UpdaterMiddleware implements IOrderP
 
         try {
             String queryOrder = getRatisClientFromID(id.getID()).get(getStorePath(id.getID())).getMessage().getContent().toString(Charset.defaultCharset());
-            Order order = OrderNative.fromJson(queryOrder).toOrder();
+            System.out.println("Banco encontrou order: " + queryOrder);
+            String onlyJson = queryOrder.split(":", 2)[1];
+            if ("null".equals(onlyJson)) {
+                throw new NotFoundItemInPortalException(id.getID());
+            }
+            Order order = OrderNative.fromJson(onlyJson).toOrder();
             orderCacheService.createOrder(order);
             return order;
-        } catch (JsonSyntaxException jsonSyntaxException) {
+        } catch (JsonSyntaxException | ArrayIndexOutOfBoundsException jsonSyntaxException) {
             throw new NotFoundItemInPortalException();
         } catch (IllegalStateException illegalStateException) {
             illegalStateException.printStackTrace();
