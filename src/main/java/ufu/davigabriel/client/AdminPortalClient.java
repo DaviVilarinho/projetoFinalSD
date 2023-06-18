@@ -232,6 +232,7 @@ public class AdminPortalClient {
     }
 
     static private ReplyNative createProduct(AdminPortalGrpc.AdminPortalBlockingStub blockingStub, ProductNative productNative) {
+        myHashes.put(productNative.getPID(), productNative.getHash());
         return ReplyNative.fromReply(blockingStub.createProduct(productNative.toProduct()));
     }
 
@@ -239,16 +240,31 @@ public class AdminPortalClient {
         Product product = blockingStub.retrieveProduct(ID.newBuilder().setID(productId).build());
         Optional<ProductNative> optionalProduct = Optional.empty();
         if (!"0".equals(product.getPID())) {
-            optionalProduct = Optional.of(ProductNative.fromProduct(product));
+            ProductNative productNative = ProductNative.fromProduct(product);
+            optionalProduct = Optional.of(productNative);
+            myHashes.put(productId, productNative.getHash());
         }
         return optionalProduct;
     }
 
     static private ReplyNative updateProduct(AdminPortalGrpc.AdminPortalBlockingStub blockingStub, ProductNative productNative) {
-        return ReplyNative.fromReply(blockingStub.updateProduct(productNative.toProduct()));
+        if (!myHashes.containsKey(productNative.getPID())) {
+            Optional<ProductNative> optionalProductNative = retrieveProduct(blockingStub, productNative.getPID());
+            optionalProductNative.ifPresent((oldProduct) -> {
+                System.out.println("Como você ainda não tinha se relacionado com o PID "
+                                           + productNative.getPID()
+                                           + ", a atualização será baseada neste produto " + oldProduct.toJson());
+                if (!"0".equals(oldProduct.getPID())) {myHashes.put(oldProduct.getPID(), oldProduct.getHash());}
+            });
+        }
+        productNative.setUpdatedVersionHash(myHashes.getOrDefault(productNative.getPID(), ""));
+        ReplyNative replyNative = ReplyNative.fromReply(blockingStub.updateProduct(productNative.toProduct()));
+        myHashes.put(productNative.getPID(), productNative.getHash());
+        return replyNative;
     }
 
     static private ReplyNative removeProduct(AdminPortalGrpc.AdminPortalBlockingStub blockingStub, String productId) {
+        myHashes.remove(productId);
         return ReplyNative.fromReply(blockingStub.deleteProduct(ID.newBuilder().setID(productId).build()));
     }
 }

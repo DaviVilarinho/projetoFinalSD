@@ -107,7 +107,7 @@ public class OrderUpdaterMiddleware extends UpdaterMiddleware implements IOrderP
                 throw new DuplicatePortalItemException();
             }
             orderCacheService.createOrder(order);
-        } catch (IllegalStateException | NumberFormatException illegalStateException) {
+        } catch (IllegalStateException | NumberFormatException | NullPointerException illegalStateException) {
             illegalStateException.printStackTrace();
             System.out.println("Erro json inválido: " + order);
             throw new BadRequestException();
@@ -132,7 +132,7 @@ public class OrderUpdaterMiddleware extends UpdaterMiddleware implements IOrderP
                 throw new NotFoundItemInPortalException();
             }
             orderCacheService.updateOrder(order);
-        } catch (IllegalStateException | NumberFormatException illegalStateException) {
+        } catch (IllegalStateException | NumberFormatException | NullPointerException illegalStateException) {
             illegalStateException.printStackTrace();
             System.out.println("Erro json inválido: " + order);
             throw new BadRequestException();
@@ -172,7 +172,7 @@ public class OrderUpdaterMiddleware extends UpdaterMiddleware implements IOrderP
             return order;
         } catch (JsonSyntaxException | ArrayIndexOutOfBoundsException jsonSyntaxException) {
             throw new NotFoundItemInPortalException();
-        } catch (IllegalStateException | NumberFormatException illegalStateException) {
+        } catch (IllegalStateException | NumberFormatException | NullPointerException illegalStateException) {
             illegalStateException.printStackTrace();
             System.out.println("Erro json inválido: " + id);
             throw new BadRequestException();
@@ -190,7 +190,7 @@ public class OrderUpdaterMiddleware extends UpdaterMiddleware implements IOrderP
                 throw new NotFoundItemInPortalException();
             }
             orderCacheService.deleteOrder(id);
-        } catch (IllegalStateException | NumberFormatException illegalStateException) {
+        } catch (IllegalStateException | NumberFormatException | NullPointerException illegalStateException) {
             illegalStateException.printStackTrace();
             System.out.println("Erro json inválido: " + id);
             throw new BadRequestException();
@@ -224,7 +224,7 @@ public class OrderUpdaterMiddleware extends UpdaterMiddleware implements IOrderP
             return clientOrders;
         } catch (JsonSyntaxException jsonSyntaxException) {
             throw new NotFoundItemInPortalException();
-        } catch (IllegalStateException | NumberFormatException illegalStateException) {
+        } catch (IllegalStateException | NumberFormatException | NullPointerException illegalStateException) {
             illegalStateException.printStackTrace();
             System.out.println("Erro json inválido: " + id);
             throw new BadRequestException();

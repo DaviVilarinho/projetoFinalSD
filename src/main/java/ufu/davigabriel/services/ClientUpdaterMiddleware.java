@@ -47,7 +47,7 @@ public class ClientUpdaterMiddleware extends UpdaterMiddleware implements IClien
                 throw new DuplicatePortalItemException();
             }
             clientCacheService.createClient(client);
-        } catch (IllegalStateException | NumberFormatException illegalStateException) {
+        } catch (IllegalStateException | NumberFormatException | NullPointerException illegalStateException) {
             illegalStateException.printStackTrace();
             System.out.println("Erro json inválido: " + client);
             throw new BadRequestException();
@@ -64,7 +64,7 @@ public class ClientUpdaterMiddleware extends UpdaterMiddleware implements IClien
                 throw new NotFoundItemInPortalException();
             }
             clientCacheService.updateClient(client);
-        } catch (IllegalStateException | NumberFormatException illegalStateException) {
+        } catch (IllegalStateException | NumberFormatException | NullPointerException illegalStateException) {
             illegalStateException.printStackTrace();
             System.out.println("Erro json inválido: " + client);
             throw new BadRequestException();
@@ -84,8 +84,8 @@ public class ClientUpdaterMiddleware extends UpdaterMiddleware implements IClien
         }
         try {
             String queryClient = getRatisClientFromID(id.getID()).get(getStorePath(id.getID())).getMessage().getContent().toString(Charset.defaultCharset());
-            String onlyJson = queryClient.split(":", 2)[1];
             System.out.println("Banco encontrou cliente: " + queryClient);
+            String onlyJson = queryClient.split(":", 2)[1];
             if ("null".equals(onlyJson)) {
                 throw new NotFoundItemInPortalException(id.getID());
             }
@@ -97,7 +97,7 @@ public class ClientUpdaterMiddleware extends UpdaterMiddleware implements IClien
             System.out.println("Erro no parse do json, provavelmente get:null");
             jsonSyntaxException.printStackTrace();
             throw new NotFoundItemInPortalException();
-        } catch (IllegalStateException | NumberFormatException illegalStateException) {
+        } catch (IllegalStateException | NumberFormatException | NullPointerException illegalStateException) {
             illegalStateException.printStackTrace();
             System.out.println("Erro json inválido: " + id);
             throw new BadRequestException();
@@ -115,7 +115,7 @@ public class ClientUpdaterMiddleware extends UpdaterMiddleware implements IClien
                 throw new NotFoundItemInPortalException();
             }
             clientCacheService.deleteClient(id);
-        } catch (IllegalStateException | NumberFormatException illegalStateException) {
+        } catch (IllegalStateException | NumberFormatException | NullPointerException illegalStateException) {
             illegalStateException.printStackTrace();
             System.out.println("Erro json inválido: " + id);
             throw new BadRequestException();
