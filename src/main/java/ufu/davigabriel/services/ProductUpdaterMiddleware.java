@@ -1,10 +1,12 @@
 package ufu.davigabriel.services;
 
+import com.google.gson.Gson;
 import com.google.gson.JsonSyntaxException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import ufu.davigabriel.exceptions.*;
 import ufu.davigabriel.models.ProductNative;
+import ufu.davigabriel.server.Client;
 import ufu.davigabriel.server.ID;
 import ufu.davigabriel.server.Product;
 
@@ -88,7 +90,7 @@ public class ProductUpdaterMiddleware extends UpdaterMiddleware implements IProd
             if ("null".equals(onlyJson)) {
                 throw new NotFoundItemInPortalException(id.getID());
             }
-            Product product = ProductNative.fromJson(onlyJson).toProduct();
+            Product product = new Gson().fromJson(onlyJson, Product.class);
             productCacheService.createProduct(product);
             return product;
         } catch (JsonSyntaxException jsonSyntaxException) {

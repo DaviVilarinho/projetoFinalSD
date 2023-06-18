@@ -1,5 +1,6 @@
 package ufu.davigabriel.server;
 
+import com.google.gson.Gson;
 import io.grpc.Grpc;
 import io.grpc.InsecureServerCredentials;
 import io.grpc.Server;
@@ -81,7 +82,7 @@ public class AdminPortalServer {
 
         @Override
         public void createClient(Client request, StreamObserver<Reply> responseObserver) {
-            System.out.println("CRIAR CLIENTE " + request.toString());
+            System.out.println("CRIAR CLIENTE " + new Gson().toJson(request.toString()));
             try {
                 clientUpdaterMiddleware.createClient(request);
                 responseObserver.onNext(Reply.newBuilder()

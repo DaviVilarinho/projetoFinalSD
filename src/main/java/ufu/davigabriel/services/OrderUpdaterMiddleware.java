@@ -166,7 +166,7 @@ public class OrderUpdaterMiddleware extends UpdaterMiddleware implements IOrderP
             if ("null".equals(onlyJson)) {
                 throw new NotFoundItemInPortalException(id.getID());
             }
-            Order order = OrderNative.fromJson(onlyJson).toOrder();
+            Order order = new Gson().fromJson(onlyJson, Order.class);
             orderCacheService.createOrder(order);
             return order;
         } catch (JsonSyntaxException | ArrayIndexOutOfBoundsException jsonSyntaxException) {

@@ -1,5 +1,6 @@
 package ufu.davigabriel.services;
 
+import com.google.gson.Gson;
 import com.google.gson.JsonSyntaxException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -8,6 +9,7 @@ import ufu.davigabriel.models.ClientNative;
 import ufu.davigabriel.server.Client;
 import ufu.davigabriel.server.ID;
 import java.nio.charset.Charset;
+import java.util.HashMap;
 
 public class ClientUpdaterMiddleware extends UpdaterMiddleware implements IClientProxyDatabase {
     private static ClientUpdaterMiddleware instance;
@@ -41,7 +43,7 @@ public class ClientUpdaterMiddleware extends UpdaterMiddleware implements IClien
             throw new DuplicatePortalItemException(client.getCID());
         }
         try {
-            if (!getRatisClientFromID(client.getCID()).add(getClientStorePath(client), ClientNative.fromClient(client).toJson()).isSuccess()) {
+            if (!getRatisClientFromID(client.getCID()).add(getClientStorePath(client), new Gson().toJson(client)).isSuccess()) {
                 throw new DuplicatePortalItemException();
             }
             clientCacheService.createClient(client);
@@ -58,7 +60,7 @@ public class ClientUpdaterMiddleware extends UpdaterMiddleware implements IClien
         clientCacheService.throwIfNotUpdatable(ClientNative.fromClient(client));
         try {
             if (!getRatisClientFromID(client.getCID()).update(
-                    getClientStorePath(client), client.toString()).isSuccess()) {
+                    getClientStorePath(client), new Gson().toJson(client)).isSuccess()) {
                 throw new NotFoundItemInPortalException();
             }
             clientCacheService.updateClient(client);
@@ -82,12 +84,12 @@ public class ClientUpdaterMiddleware extends UpdaterMiddleware implements IClien
         }
         try {
             String queryClient = getRatisClientFromID(id.getID()).get(getStorePath(id.getID())).getMessage().getContent().toString(Charset.defaultCharset());
-            System.out.println("Banco encontrou cliente: " + queryClient);
             String onlyJson = queryClient.split(":", 2)[1];
+            System.out.println("Banco encontrou cliente: " + queryClient);
             if ("null".equals(onlyJson)) {
                 throw new NotFoundItemInPortalException(id.getID());
             }
-            Client client = ClientNative.fromJson(onlyJson).toClient();
+            Client client = new Gson().fromJson(onlyJson, Client.class);
             clientCacheService.createClient(client);
             System.out.println("Retornando Cliente que encontrou no banco " + client.toString() + ", já criado na cache");
             return client;

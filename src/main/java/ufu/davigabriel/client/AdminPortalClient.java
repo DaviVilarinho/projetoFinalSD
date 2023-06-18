@@ -9,6 +9,7 @@ import ufu.davigabriel.models.ProductNative;
 import ufu.davigabriel.models.ReplyNative;
 import ufu.davigabriel.server.*;
 
+import javax.swing.text.html.Option;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
 import java.util.zip.CRC32;
@@ -19,6 +20,7 @@ public class AdminPortalClient {
     public static String TARGET_SERVER = String.format("%s:%d", HOST, SERVER_PORT);
     private static AdminPortalGrpc.AdminPortalBlockingStub blockingStub;
     private static final Scanner scanner = new Scanner(System.in);
+    private static final HashMap<String, String> myHashes = new HashMap<>();
 
     public static void main(String[] args) throws InterruptedException {
         System.out.println("----------------------------------");
@@ -49,7 +51,8 @@ public class AdminPortalClient {
 
             AdminPortalOption adminPortalOption = AdminPortalOption.NOOP;
             while (!AdminPortalOption.SAIR.equals(adminPortalOption)) {
-                System.out.println("^^--__");
+                System.out.println("^^--__--^^");
+                System.out.println("Versões do que você já lidou: " + myHashes.keySet().toString());
                 System.out.println("Opcoes:");
                 Arrays.stream(AdminPortalOption.values()).forEach(System.out::println);
 
@@ -193,23 +196,38 @@ public class AdminPortalClient {
     }
 
     static private ReplyNative createClient(AdminPortalGrpc.AdminPortalBlockingStub blockingStub, ClientNative clientNative) {
+        myHashes.put(clientNative.getCID(), clientNative.getHash());
         return ReplyNative.fromReply(blockingStub.createClient(clientNative.toClient()));
     }
 
     static private Optional<ClientNative> retrieveClient(AdminPortalGrpc.AdminPortalBlockingStub blockingStub, String clientId) {
-        Client client = blockingStub.retrieveClient(ID.newBuilder().setID(clientId).build());
+        ClientNative client = ClientNative.fromClient(blockingStub.retrieveClient(ID.newBuilder().setID(clientId).build()));
         Optional<ClientNative> optClient = Optional.empty();
         if (!"0".equals(client.getCID())) {
-            optClient = Optional.of(ClientNative.fromClient(client));
+            optClient = Optional.of(client);
+            myHashes.put(clientId, client.getHash());
         }
         return optClient;
     }
 
     static private ReplyNative updateClient(AdminPortalGrpc.AdminPortalBlockingStub blockingStub, ClientNative clientNative) {
-        return ReplyNative.fromReply(blockingStub.updateClient(clientNative.toClient()));
+        if (!myHashes.containsKey(clientNative.getCID())) {
+            Optional<ClientNative> optionalClientNative = retrieveClient(blockingStub, clientNative.getCID());
+            optionalClientNative.ifPresent((oldClient) -> {
+                System.out.println("Como você ainda não tinha se relacionado com o CID "
+                                                                            + clientNative.getCID()
+                                                                            + ", a atualização será baseada neste cliente " + oldClient.toJson());
+                if (!"0".equals(oldClient.getCID())) {myHashes.put(oldClient.getCID(), oldClient.getHash());}
+            });
+        }
+        clientNative.setUpdatedVersionHash(myHashes.getOrDefault(clientNative.getCID(), ""));
+        ReplyNative replyNative = ReplyNative.fromReply(blockingStub.updateClient(clientNative.toClient()));
+        myHashes.put(clientNative.getCID(), clientNative.getHash());
+        return replyNative;
     }
 
     static private ReplyNative removeClient(AdminPortalGrpc.AdminPortalBlockingStub blockingStub, String clientId) {
+        myHashes.remove(clientId);
         return ReplyNative.fromReply(blockingStub.deleteClient(ID.newBuilder().setID(clientId).build()));
     }
 
