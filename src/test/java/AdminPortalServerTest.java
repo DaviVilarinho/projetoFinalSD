@@ -171,4 +171,83 @@ public class AdminPortalServerTest {
         Thread.sleep(TOLERANCE_MS);
         Assert.assertEquals(productThatShouldActuallyBeUpdated.toProduct(), product);
     }
+
+    @Test
+    public void shouldCrdClientOnDelay() throws IOException, InterruptedException {
+        String serverName = InProcessServerBuilder.generateName();
+
+        // Create a server, add service, start, and register for automatic graceful shutdown.
+        grpcCleanup.register(InProcessServerBuilder
+                                     .forName(serverName).directExecutor().addService(new AdminPortalServer.AdminPortalImpl()).build().start());
+
+        AdminPortalGrpc.AdminPortalBlockingStub blockingStub = AdminPortalGrpc.newBlockingStub(
+                grpcCleanup.register(InProcessChannelBuilder.forName(serverName).directExecutor().build()));
+
+        Client clientThatShouldBeCreated = RandomUtils.generateRandomClient().toClient();
+        Client clientThatShouldNotBeCreated = RandomUtils.generateRandomClient().toClient();
+
+        Reply reply = blockingStub.createClient(clientThatShouldBeCreated);
+        Client client = blockingStub.retrieveClient(ID.newBuilder().setID(clientThatShouldBeCreated.getCID()).build());
+        Assert.assertEquals(clientThatShouldBeCreated, client);
+        Thread.sleep(31*1000);
+        client = blockingStub.retrieveClient(ID.newBuilder().setID(clientThatShouldBeCreated.getCID()).build());
+        Assert.assertEquals(clientThatShouldBeCreated, client);
+        Assert.assertNotEquals(clientThatShouldNotBeCreated, client);
+        client = blockingStub.retrieveClient(ID.newBuilder().setID(clientThatShouldNotBeCreated.getCID()).build());
+        Assert.assertNotEquals(clientThatShouldNotBeCreated, client);
+
+        clientThatShouldBeCreated = clientThatShouldNotBeCreated;
+        reply = blockingStub.createClient(clientThatShouldBeCreated);
+        Assert.assertNotEquals(clientThatShouldBeCreated, client);
+        client = blockingStub.retrieveClient(ID.newBuilder().setID(clientThatShouldBeCreated.getCID()).build());
+        Assert.assertEquals(clientThatShouldBeCreated, client);
+
+        reply = blockingStub.deleteClient(ID.newBuilder().setID(clientThatShouldBeCreated.getCID()).build());
+        Assert.assertEquals(reply.getError(), ReplyNative.SUCESSO.getError());
+        Thread.sleep(31*1000);
+        client = blockingStub.retrieveClient(ID.newBuilder().setID(clientThatShouldNotBeCreated.getCID()).build());
+        Assert.assertNotEquals(clientThatShouldBeCreated, client);
+    }
+
+    @Test
+    public void shouldCrdProductOneServerOnDelay() throws IOException, InterruptedException {
+        Product productThatShouldBeCreated = RandomUtils.generateRandomProduct().toProduct();
+        Product productThatShouldNotBeCreated = RandomUtils.generateRandomProduct().toProduct();
+
+        String serverName = InProcessServerBuilder.generateName();
+
+        // Create a server, add service, start, and register for automatic graceful shutdown.
+        grpcCleanup.register(InProcessServerBuilder
+                                     .forName(serverName).directExecutor().addService(new AdminPortalServer.AdminPortalImpl()).build().start());
+
+        AdminPortalGrpc.AdminPortalBlockingStub blockingStub = AdminPortalGrpc.newBlockingStub(
+                grpcCleanup.register(InProcessChannelBuilder.forName(serverName).directExecutor().build()));
+
+        Reply reply = blockingStub.createProduct(productThatShouldBeCreated);
+        Thread.sleep(TOLERANCE_MS);
+        Product product = blockingStub.retrieveProduct(ID.newBuilder().setID(productThatShouldBeCreated.getPID()).build());
+        Thread.sleep(TOLERANCE_MS);
+        Assert.assertEquals(productThatShouldBeCreated, product);
+        Thread.sleep(31*1000);
+        product = blockingStub.retrieveProduct(ID.newBuilder().setID(productThatShouldBeCreated.getPID()).build());
+        Assert.assertEquals(productThatShouldBeCreated, product);
+        Assert.assertNotEquals(productThatShouldNotBeCreated, product);
+        product = blockingStub.retrieveProduct(ID.newBuilder().setID(productThatShouldNotBeCreated.getPID()).build());
+        Thread.sleep(TOLERANCE_MS);
+        Assert.assertNotEquals(productThatShouldNotBeCreated, product);
+        productThatShouldBeCreated = productThatShouldNotBeCreated;
+        reply = blockingStub.createProduct(productThatShouldBeCreated);
+        Thread.sleep(TOLERANCE_MS);
+        Assert.assertNotEquals(productThatShouldBeCreated, product);
+        product = blockingStub.retrieveProduct(ID.newBuilder().setID(productThatShouldBeCreated.getPID()).build());
+        Thread.sleep(TOLERANCE_MS);
+        Assert.assertEquals(productThatShouldBeCreated, product);
+
+        reply = blockingStub.deleteProduct(ID.newBuilder().setID(productThatShouldBeCreated.getPID()).build());
+        Thread.sleep(TOLERANCE_MS);
+        Assert.assertEquals(reply.getError(), ReplyNative.SUCESSO.getError());
+        product = blockingStub.retrieveProduct(ID.newBuilder().setID(productThatShouldBeCreated.getPID()).build());
+        Thread.sleep(TOLERANCE_MS);
+        Assert.assertNotEquals(productThatShouldBeCreated, product);
+    }
 }

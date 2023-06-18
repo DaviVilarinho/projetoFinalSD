@@ -9,7 +9,7 @@ import java.util.ArrayList;
 
 public interface IOrderProxyDatabase {
     void createOrder(Order order) throws DuplicatePortalItemException, RatisClientException, BadRequestException, UnauthorizedUserException;
-    void updateOrder(Order order) throws NotFoundItemInPortalException, RatisClientException, BadRequestException, UnauthorizedUserException;
+    void updateOrder(Order order) throws NotFoundItemInPortalException, RatisClientException, BadRequestException, UnauthorizedUserException, IllegalVersionPortalItemException;
     void deleteOrder(ID id) throws NotFoundItemInPortalException, RatisClientException, BadRequestException;
     Order retrieveOrder(ID id) throws NotFoundItemInPortalException, RatisClientException, BadRequestException;
     ArrayList<Order> retrieveClientOrders(ID id) throws NotFoundItemInPortalException, RatisClientException, BadRequestException;

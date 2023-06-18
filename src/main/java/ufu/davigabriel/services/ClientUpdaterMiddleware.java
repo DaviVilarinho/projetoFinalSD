@@ -37,6 +37,9 @@ public class ClientUpdaterMiddleware extends UpdaterMiddleware implements IClien
         } catch (NotFoundItemInPortalException notFoundItemInPortalException) {
             System.out.println("Não há usuário " + client.getCID() + ", prosseguindo com create");
         }
+        if (clientCacheService.hasClient(client)) {
+            throw new DuplicatePortalItemException(client.getCID());
+        }
         try {
             if (!getRatisClientFromID(client.getCID()).add(getClientStorePath(client), ClientNative.fromClient(client).toJson()).isSuccess()) {
                 throw new DuplicatePortalItemException();
@@ -77,13 +80,20 @@ public class ClientUpdaterMiddleware extends UpdaterMiddleware implements IClien
         } catch (NotFoundItemInPortalException notFoundItemInPortalException) {
             System.out.println("ID não encontrado, tentando buscar no bd " + id.toString());
         }
-
         try {
             String queryClient = getRatisClientFromID(id.getID()).get(getStorePath(id.getID())).getMessage().getContent().toString(Charset.defaultCharset());
-            Client client = ClientNative.fromJson(queryClient).toClient();
+            System.out.println("Banco encontrou cliente: " + queryClient);
+            String onlyJson = queryClient.split(":", 2)[1];
+            if ("null".equals(onlyJson)) {
+                throw new NotFoundItemInPortalException(id.getID());
+            }
+            Client client = ClientNative.fromJson(onlyJson).toClient();
             clientCacheService.createClient(client);
+            System.out.println("Retornando Cliente que encontrou no banco " + client.toString() + ", já criado na cache");
             return client;
-        } catch (JsonSyntaxException jsonSyntaxException) {
+        } catch (JsonSyntaxException | ArrayIndexOutOfBoundsException jsonSyntaxException) {
+            System.out.println("Erro no parse do json, provavelmente get:null");
+            jsonSyntaxException.printStackTrace();
             throw new NotFoundItemInPortalException();
         } catch (IllegalStateException illegalStateException) {
             illegalStateException.printStackTrace();

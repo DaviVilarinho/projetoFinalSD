@@ -77,6 +77,7 @@ public class ProductCacheService extends BaseCacheService implements IProductPro
         throwIfNotUpdatable(productNative);
         if (!hasProduct(productNative.getPID())) throw new NotFoundItemInPortalException();
         productsMap.put(productNative.getPID(), productNative.toJson());
+        addToCache(productNative);
     }
 
     public void deleteProduct(ID id) throws NotFoundItemInPortalException {
@@ -87,6 +88,7 @@ public class ProductCacheService extends BaseCacheService implements IProductPro
         throwNotFoundItemIfOldOrNotFoundHash(id);
         if (!hasProduct(id)) throw new NotFoundItemInPortalException();
         productsMap.remove(id);
+        removeFromCache(id);
     }
 
     public boolean hasProduct(String id) { return productsMap.containsKey(id) && !this.isCacheOldOrMissing(id); }

@@ -5,7 +5,9 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;
+import org.apache.ratis.io.MD5Hash;
 import ufu.davigabriel.server.Order;
+import ufu.davigabriel.services.BaseCacheService;
 
 import java.util.ArrayList;
 
@@ -13,10 +15,12 @@ import java.util.ArrayList;
 @Setter
 @Getter
 @ToString
-public class OrderNative {
+public class OrderNative extends BaseCacheService implements Updatable {
     private String OID;
     private String CID;
     private ArrayList<OrderItemNative> products;
+    private String updatedVersionHash;
+
 
     public static OrderNative fromOrder(Order order) {
         return new Gson().fromJson(order.getData(), OrderNative.class);
@@ -39,6 +43,16 @@ public class OrderNative {
 
     public static OrderNative fromJson(String json) {
         return new Gson().fromJson(json, OrderNative.class);
+    }
+
+    @Override
+    public String getHash() {
+        return MD5Hash.digest((OID + CID + products.toString()).getBytes()).toString();
+    }
+
+    @Override
+    public String getCacheKey() {
+        return getOID();
     }
 
     public String toJson() {

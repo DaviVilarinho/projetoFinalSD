@@ -51,7 +51,8 @@ public class ProductNative implements Updatable {
 
     @Override
     public String getHash() {
-        return MD5Hash.digest((this.getPID() + this.getName() + this.quantity + this.price + this.getDescription()).getBytes()).toString();
+        return MD5Hash.digest(
+                (this.getPID() + this.getName() + String.format("%d%.2f", this.quantity, this.price) + this.getDescription()).getBytes()).toString();
     }
 
     @Override

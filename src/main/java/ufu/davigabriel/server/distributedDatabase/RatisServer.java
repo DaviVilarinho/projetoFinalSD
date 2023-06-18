@@ -59,6 +59,7 @@ public class RatisServer {
         final RaftGroup raftGroup = RaftGroup.valueOf(RaftGroupId.valueOf(ByteString.copyFromUtf8(GlobalVarsService.PARTITION_RATIS_IDS[ratisPartitionNumber])), addresses);
         RaftServer raftServer = RaftServer.newBuilder().setServerId(myId).setStateMachine(new BaseStateMachine(ratisPartitionPeerId, ratisPartitionNumber)).setProperties(properties).setGroup(raftGroup).build();
         raftServer.start();
+        System.out.println("Raft partition replica started");
         while (raftServer.getLifeCycleState() != LifeCycle.State.CLOSED) {
             TimeUnit.SECONDS.sleep(1);
         }

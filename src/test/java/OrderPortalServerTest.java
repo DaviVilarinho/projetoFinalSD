@@ -82,6 +82,7 @@ public class OrderPortalServerTest {
         OrderNative orderNativeThatUserIsNotAuthenticated = randomOrderTriple.getRandomOrderNative();
         orderNativeThatUserIsNotAuthenticated.setOID(randomOrderTriple.getRandomOrderNative().getOID());
         orderNativeThatUserIsNotAuthenticated.setCID(Integer.toString(Integer.parseInt(randomOrderTriple.getRandomOrderNative().getCID()) + 1));
+        orderNativeThatUserIsNotAuthenticated.setUpdatedVersionHash(randomOrderTriple.getRandomOrderNative().getHash());
         Assert.assertEquals(orderPortalBlockingStub.updateOrder(orderNativeThatUserIsNotAuthenticated.toOrder()).getError(), ReplyNative.NAO_LOGADO.getError());
         Thread.sleep(TOLERANCE_MS);
     }
@@ -124,8 +125,8 @@ public class OrderPortalServerTest {
             Assert.assertEquals(adminPortalBlockingStub.createProduct(productNative.toProduct()).getError(), ReplyNative.SUCESSO.getError());
             Thread.sleep(TOLERANCE_MS);
         }
+        Assert.assertEquals(randomOrderTriple.getRandomOrderNative().getCID(), randomOrderTriple.getRandomClientNative().getCID());
         Assert.assertEquals(orderPortalBlockingStub.createOrder(randomOrderTriple.getRandomOrderNative().toOrder()).getError(), ReplyNative.SUCESSO.getError());
-        Thread.sleep(TOLERANCE_MS);
 
         for (ProductNative productNative : randomOrderTriple.getRandomProductsNative()) {
             Product productAfterUpdate = adminPortalBlockingStub.retrieveProduct(ID.newBuilder().setID(productNative.getPID()).build());
@@ -219,6 +220,8 @@ public class OrderPortalServerTest {
         }
         Assert.assertEquals(orderPortalBlockingStub.createOrder(randomOrderTriple.getRandomOrderNative().toOrder()).getError(), ReplyNative.SUCESSO.getError());
         Thread.sleep(TOLERANCE_MS);
+
+        randomOrderTriple.getRandomOrderNative().setUpdatedVersionHash(randomOrderTriple.getRandomOrderNative().getHash());
 
         randomOrderTriple.getRandomOrderNative().setProducts(randomOrderTriple.getRandomOrderNative().getProducts().stream().map(orderItemNative -> {
             orderItemNative.setQuantity(IN_ORDER_AFTER);

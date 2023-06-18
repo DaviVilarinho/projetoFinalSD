@@ -76,6 +76,7 @@ public class ClientCacheService extends BaseCacheService implements IClientProxy
         throwIfNotUpdatable(clientNative);
         if (!hasClient(clientNative.getCID())) throw new NotFoundItemInPortalException();
         clientsMap.put(clientNative.getCID(), clientNative.toJson());
+        addToCache(clientNative);
     }
 
     public void deleteClient(ID id) throws NotFoundItemInPortalException {
@@ -86,6 +87,7 @@ public class ClientCacheService extends BaseCacheService implements IClientProxy
         throwNotFoundItemIfOldOrNotFoundHash(id);
         if (!hasClient(id)) throw new NotFoundItemInPortalException();
         clientsMap.remove(id);
+        removeFromCache(id);
     }
 
     public boolean hasClient(String id) {

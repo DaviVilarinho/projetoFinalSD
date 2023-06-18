@@ -42,8 +42,10 @@ public class OrderUpdaterMiddleware extends UpdaterMiddleware implements IOrderP
     private void changeGlobalProductQuantity(String productId, int variation) {
         try {
             ProductNative productToBeAdjusted = ProductNative.fromProduct(adminBlockingStub.retrieveProduct(ID.newBuilder().setID(productId).build()));
+            productToBeAdjusted.setUpdatedVersionHash(productToBeAdjusted.getHash());
             productToBeAdjusted.setQuantity(productToBeAdjusted.getQuantity() + variation);
-            adminBlockingStub.updateProduct(productToBeAdjusted.toProduct());
+            Reply reply = adminBlockingStub.updateProduct(productToBeAdjusted.toProduct());
+            System.out.println("O status da atualização do produto " + productId + ": " + reply.getDescription());
         } catch (Exception exception) {
             exception.printStackTrace();
             System.err.println("Não foi possível atualizar " + productId + " para uma variação de " + variation);
@@ -91,6 +93,11 @@ public class OrderUpdaterMiddleware extends UpdaterMiddleware implements IOrderP
     @Override
     public void createOrder(Order order) throws DuplicatePortalItemException, RatisClientException, BadRequestException, UnauthorizedUserException {
         authenticateClient(order.getCID());
+        try {
+            retrieveOrder(order);
+        } catch (NotFoundItemInPortalException notFoundItemInPortalException) {
+            System.out.println("Não havia ordem " + order.getOID() + ", prosseguindo criação");
+        }
         if (orderCacheService.hasOrder(order)) {
             throw new DuplicatePortalItemException("Order já existe: " + order);
         }
@@ -109,9 +116,10 @@ public class OrderUpdaterMiddleware extends UpdaterMiddleware implements IOrderP
     }
 
     @Override
-    public void updateOrder(Order order) throws NotFoundItemInPortalException, RatisClientException, BadRequestException, UnauthorizedUserException {
+    public void updateOrder(Order order) throws NotFoundItemInPortalException, RatisClientException, BadRequestException, UnauthorizedUserException, IllegalVersionPortalItemException {
         Optional<Order> oldOrder = Optional.of(retrieveOrder(order));
         authenticateClient(order.getCID());
+        orderCacheService.throwIfNotUpdatable(OrderNative.fromOrder(order));
         throwIfCIDIsDifferentFromOldOrderCID(oldOrder, order);
         OrderNative newOrderNative = OrderNative.fromOrder(order);
         newOrderNative.getProducts().removeIf(item -> item.getQuantity() == 0);

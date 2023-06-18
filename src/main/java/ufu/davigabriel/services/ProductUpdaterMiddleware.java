@@ -37,6 +37,9 @@ public class ProductUpdaterMiddleware extends UpdaterMiddleware implements IProd
         } catch (NotFoundItemInPortalException notFoundItemInPortalException) {
             System.out.println("Não há produto " + product.getPID() + ", prosseguindo criação");
         }
+        if (productCacheService.hasProduct(product)) {
+            throw new DuplicatePortalItemException("Produto já existe");
+        }
         try {
             if (!getRatisClientFromID(product.getPID()).add(getProductStorePath(product), ProductNative.fromProduct(product).toJson()).isSuccess()) {
                 throw new DuplicatePortalItemException();

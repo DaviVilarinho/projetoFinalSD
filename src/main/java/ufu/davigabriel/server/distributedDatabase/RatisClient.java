@@ -68,11 +68,7 @@ public class RatisClient {
     }
 
     public RaftClientReply del(String key) throws RatisClientException {
-        try {
-            return client.io().sendReadOnly(Message.valueOf("del:" + key));
-        } catch (IOException ioException) {
-            throw new RatisClientException();
-        }
+        return update(key, "null");
     }
 
     public RaftClientReply clear() throws RatisClientException {

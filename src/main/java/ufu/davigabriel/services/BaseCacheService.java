@@ -47,9 +47,14 @@ public class BaseCacheService {
         this.cacheTable.put(updatable.getCacheKey(), Pair.of(updatable.getHash(), System.currentTimeMillis()));
     }
 
+    public void removeFromCache(Updatable updatable) { removeFromCache(updatable.getCacheKey()); }
+    public void removeFromCache(String id) { this.cacheTable.remove(id); }
+
     public void throwIfNotUpdatable(Updatable newUpdate) throws NotFoundItemInPortalException, IllegalVersionPortalItemException {
         throwNotFoundItemIfOldOrNotFoundHash(newUpdate.getCacheKey()); // not fresh
-        if (!cacheTable.get(newUpdate.getCacheKey()).getLeft().equals(newUpdate.getUpdatedVersionHash())) {
+        String hashOnCache = cacheTable.get(newUpdate.getCacheKey()).getLeft();
+        if (!hashOnCache.equals(newUpdate.getUpdatedVersionHash())) {
+            System.out.println("Novo update referencia hash --\"" + newUpdate.getUpdatedVersionHash() + "\"-- que é diferente de " + hashOnCache);
             throw new IllegalVersionPortalItemException(); // not the correct version
         }
     }
