@@ -10,6 +10,14 @@ import ufu.davigabriel.models.Updatable;
 
 import java.util.HashMap;
 
+/**
+ * BaseCacheService é uma superclasse que fornece serviços de
+ * CACHE
+ * ou seja salva um hash, o id que o dá e por quanto tempo isso é válido
+ * em seguida quando é chamado requisições é possível verificar:
+ *  -   versão de acordo com esperado
+ *  -   se é velha
+ */
 @Getter
 @Setter
 @AllArgsConstructor
@@ -50,6 +58,11 @@ public class BaseCacheService {
     public void removeFromCache(Updatable updatable) { removeFromCache(updatable.getCacheKey()); }
     public void removeFromCache(String id) { this.hashCacheTable.remove(id); }
 
+    /*
+        Atualização Causal
+        Se não refletir a escrita que o cliente diz que usou quando atualizou pelo atributo updatedVersionHash
+        NÃO deixa atualizar
+     */
     public void throwIfNotUpdatable(Updatable newUpdate) throws NotFoundItemInPortalException, IllegalVersionPortalItemException {
         throwNotFoundItemIfOldOrNotFoundHash(newUpdate.getCacheKey()); // not fresh
         String hashOnCache = hashCacheTable.get(newUpdate.getCacheKey()).getLeft();

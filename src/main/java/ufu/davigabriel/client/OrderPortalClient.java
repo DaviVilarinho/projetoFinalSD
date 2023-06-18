@@ -28,12 +28,19 @@ public class OrderPortalClient {
         System.out.println("Bem vindo ao Portal de Pedidos");
         System.out.println("----------------------------------");
 
+        int adminPortalServerPort = GlobalVarsService.getInstance().getRandomAdminPortalPort();
+
         try {
             if (args.length > 0) {
                 SERVER_PORT = Integer.parseInt(args[0]);
                 if (SERVER_PORT < 1024 || SERVER_PORT > 65536) throw new NumberFormatException("Porta com numero invalido");
                 TARGET_SERVER = String.format("%s:%d", HOST,
                         SERVER_PORT);
+            }
+            if (args.length > 1) {
+                adminPortalServerPort = Integer.parseInt(args[1]);
+                if (adminPortalServerPort < 1024 || adminPortalServerPort > 65536) throw new NumberFormatException("Porta com numero invalido");
+                adminPortalServerPort = GlobalVarsService.getInstance().getRandomAdminPortalPort();
             }
         } catch (NumberFormatException numberFormatException) {
             System.out.println("Se quiser conectar em alguma porta, por favor" +
@@ -46,7 +53,7 @@ public class OrderPortalClient {
 
         ManagedChannel channel = Grpc.newChannelBuilder(TARGET_SERVER, InsecureChannelCredentials.create()).build();
 
-        String CONNECTION_SERVER = String.format("%s:%d", "127.0.0.1", GlobalVarsService.getInstance().getRandomAdminPortalPort());
+        String CONNECTION_SERVER = String.format("%s:%d", "127.0.0.1", adminPortalServerPort);
         ManagedChannel connectionChannel = Grpc.newChannelBuilder(CONNECTION_SERVER, InsecureChannelCredentials.create()).build();
         AdminPortalGrpc.AdminPortalBlockingStub adminPortalBlockingStub = AdminPortalGrpc.newBlockingStub(connectionChannel);
 
