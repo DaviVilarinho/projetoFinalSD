@@ -3,10 +3,7 @@ package ufu.davigabriel.services;
 import com.google.gson.JsonSyntaxException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import ufu.davigabriel.exceptions.BadRequestException;
-import ufu.davigabriel.exceptions.DuplicatePortalItemException;
-import ufu.davigabriel.exceptions.NotFoundItemInPortalException;
-import ufu.davigabriel.exceptions.RatisClientException;
+import ufu.davigabriel.exceptions.*;
 import ufu.davigabriel.models.ProductNative;
 import ufu.davigabriel.server.ID;
 import ufu.davigabriel.server.Product;
@@ -35,8 +32,10 @@ public class ProductUpdaterMiddleware extends UpdaterMiddleware implements IProd
 
     @Override
     public void createProduct(Product product) throws DuplicatePortalItemException, BadRequestException, RatisClientException {
-        if (productCacheService.hasProduct(product)) {
-            throw new DuplicatePortalItemException("Produto já existe: " + product);
+        try {
+            retrieveProduct(product);
+        } catch (NotFoundItemInPortalException notFoundItemInPortalException) {
+            System.out.println("Não há produto " + product.getPID() + ", prosseguindo criação");
         }
         try {
             if (!getRatisClientFromID(product.getPID()).add(getProductStorePath(product), ProductNative.fromProduct(product).toJson()).isSuccess()) {
@@ -51,10 +50,9 @@ public class ProductUpdaterMiddleware extends UpdaterMiddleware implements IProd
     }
 
     @Override
-    public void updateProduct(Product product) throws NotFoundItemInPortalException, RatisClientException, BadRequestException {
-        if (!productCacheService.hasProduct(product)) {
-            retrieveProduct(product);
-        }
+    public void updateProduct(Product product) throws NotFoundItemInPortalException, RatisClientException, BadRequestException, IllegalVersionPortalItemException {
+        retrieveProduct(product);
+        productCacheService.throwIfNotUpdatable(ProductNative.fromProduct(product));
         try {
             if (!getRatisClientFromID(product.getPID()).update(
                     getProductStorePath(product), product.toString()).isSuccess()) {
@@ -99,10 +97,7 @@ public class ProductUpdaterMiddleware extends UpdaterMiddleware implements IProd
 
     @Override
     public void deleteProduct(ID id) throws NotFoundItemInPortalException, RatisClientException, BadRequestException {
-
-        if (!productCacheService.hasProduct(id.getID())) {
-            retrieveProduct(id);
-        }
+        retrieveProduct(id);
         try {
             if (!getRatisClientFromID(id.getID()).del(getStorePath(id.getID())).isSuccess()) {
                 throw new NotFoundItemInPortalException();

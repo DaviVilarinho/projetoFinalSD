@@ -5,18 +5,20 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;
+import org.apache.ratis.io.MD5Hash;
 import ufu.davigabriel.server.Product;
 
 @Getter
 @Setter
 @Builder(toBuilder = true)
 @ToString
-public class ProductNative {
+public class ProductNative implements Updatable {
     private String PID;
     private String name;
     private int quantity;
     private double price;
     private String description;
+    private String updatedVersionHash;
 
     public Product toProduct() {
         return Product.newBuilder()
@@ -45,6 +47,16 @@ public class ProductNative {
 
     public static ProductNative fromJson(String json) {
         return new Gson().fromJson(json, ProductNative.class);
+    }
+
+    @Override
+    public String getHash() {
+        return MD5Hash.digest((this.getPID() + this.getName() + this.quantity + this.price + this.getDescription()).getBytes()).toString();
+    }
+
+    @Override
+    public String getCacheKey() {
+        return getPID();
     }
 }
 

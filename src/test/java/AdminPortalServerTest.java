@@ -84,7 +84,7 @@ public class AdminPortalServerTest {
     }
 
     @Test
-    public void shouldCrudProductOneServer() throws IOException, InterruptedException {
+    public void shouldCrdProductOneServer() throws IOException, InterruptedException {
         Product productThatShouldBeCreated = RandomUtils.generateRandomProduct().toProduct();
         Product productThatShouldNotBeCreated = RandomUtils.generateRandomProduct().toProduct();
 
@@ -114,21 +114,61 @@ public class AdminPortalServerTest {
         Thread.sleep(TOLERANCE_MS);
         Assert.assertEquals(productThatShouldBeCreated, product);
 
-        productThatShouldNotBeCreated = RandomUtils.generateRandomProduct().toProduct();
-        ProductNative productNativeThatShouldBeUpdated = ProductNative.fromProduct(productThatShouldBeCreated);
-        productNativeThatShouldBeUpdated.setDescription("dkjshabuipokejxm");
-        reply = blockingStub.updateProduct(productNativeThatShouldBeUpdated.toProduct());
+        reply = blockingStub.deleteProduct(ID.newBuilder().setID(productThatShouldBeCreated.getPID()).build());
         Thread.sleep(TOLERANCE_MS);
         Assert.assertEquals(reply.getError(), ReplyNative.SUCESSO.getError());
-        product = blockingStub.retrieveProduct(ID.newBuilder().setID(productNativeThatShouldBeUpdated.getPID()).build());
+        product = blockingStub.retrieveProduct(ID.newBuilder().setID(productThatShouldBeCreated.getPID()).build());
         Thread.sleep(TOLERANCE_MS);
-        Assert.assertEquals(productNativeThatShouldBeUpdated.toProduct(), product);
+        Assert.assertNotEquals(productThatShouldBeCreated, product);
+    }
 
-        reply = blockingStub.deleteProduct(ID.newBuilder().setID(productNativeThatShouldBeUpdated.getPID()).build());
+    @Test
+    public void shouldUpdateProductOneServer() throws IOException, InterruptedException {
+        Product productThatShouldBeCreated = RandomUtils.generateRandomProduct().toProduct();
+        Product productThatShouldNotBeCreated = RandomUtils.generateRandomProduct().toProduct();
+
+        String serverName = InProcessServerBuilder.generateName();
+
+        // Create a server, add service, start, and register for automatic graceful shutdown.
+        grpcCleanup.register(InProcessServerBuilder
+                                     .forName(serverName).directExecutor().addService(new AdminPortalServer.AdminPortalImpl()).build().start());
+
+        AdminPortalGrpc.AdminPortalBlockingStub blockingStub = AdminPortalGrpc.newBlockingStub(
+                grpcCleanup.register(InProcessChannelBuilder.forName(serverName).directExecutor().build()));
+
+        Reply reply = blockingStub.createProduct(productThatShouldBeCreated);
         Thread.sleep(TOLERANCE_MS);
+        Product product = blockingStub.retrieveProduct(ID.newBuilder().setID(productThatShouldBeCreated.getPID()).build());
+        Thread.sleep(TOLERANCE_MS);
+        Assert.assertEquals(productThatShouldBeCreated, product);
+        Assert.assertNotEquals(productThatShouldNotBeCreated, product);
+        product = blockingStub.retrieveProduct(ID.newBuilder().setID(productThatShouldNotBeCreated.getPID()).build());
+        Thread.sleep(TOLERANCE_MS);
+        Assert.assertNotEquals(productThatShouldNotBeCreated, product);
+        productThatShouldBeCreated = productThatShouldNotBeCreated;
+        reply = blockingStub.createProduct(productThatShouldBeCreated);
+        Thread.sleep(TOLERANCE_MS);
+        Assert.assertNotEquals(productThatShouldBeCreated, product);
+        product = blockingStub.retrieveProduct(ID.newBuilder().setID(productThatShouldBeCreated.getPID()).build());
+        Thread.sleep(TOLERANCE_MS);
+        Assert.assertEquals(productThatShouldBeCreated, product);
+
+        ProductNative productThatShouldNotBeUpdated = ProductNative.fromProduct(productThatShouldBeCreated);
+        productThatShouldNotBeUpdated.setDescription("dkjshabuipokejxm");
+        reply = blockingStub.updateProduct(productThatShouldNotBeUpdated.toProduct());
+        Thread.sleep(TOLERANCE_MS);
+        Assert.assertEquals(reply.getError(), ReplyNative.VERSAO_CONFLITANTE.getError());
+        product = blockingStub.retrieveProduct(ID.newBuilder().setID(productThatShouldNotBeUpdated.getPID()).build());
+        Thread.sleep(TOLERANCE_MS);
+        Assert.assertNotEquals(productThatShouldNotBeUpdated.toProduct(), product);
+
+        ProductNative productThatShouldActuallyBeUpdated = ProductNative.fromProduct(productThatShouldBeCreated);
+        productThatShouldActuallyBeUpdated.setDescription("dkjshabuipokejxm");
+        productThatShouldActuallyBeUpdated.setUpdatedVersionHash(ProductNative.fromProduct(productThatShouldBeCreated).getHash());
+        reply = blockingStub.updateProduct(productThatShouldActuallyBeUpdated.toProduct());
         Assert.assertEquals(reply.getError(), ReplyNative.SUCESSO.getError());
-        product = blockingStub.retrieveProduct(ID.newBuilder().setID(productNativeThatShouldBeUpdated.getPID()).build());
+        product = blockingStub.retrieveProduct(ID.newBuilder().setID(productThatShouldActuallyBeUpdated.getPID()).build());
         Thread.sleep(TOLERANCE_MS);
-        Assert.assertNotEquals(productNativeThatShouldBeUpdated.toProduct(), product);
+        Assert.assertEquals(productThatShouldActuallyBeUpdated.toProduct(), product);
     }
 }

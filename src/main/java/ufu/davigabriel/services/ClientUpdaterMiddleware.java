@@ -33,7 +33,7 @@ public class ClientUpdaterMiddleware extends UpdaterMiddleware implements IClien
     @Override
     public void createClient(Client client) throws DuplicatePortalItemException, RatisClientException, BadRequestException {
         try {
-            Client retrieveClient = retrieveClient(client);
+            retrieveClient(client);
         } catch (NotFoundItemInPortalException notFoundItemInPortalException) {
             System.out.println("Não há usuário " + client.getCID() + ", prosseguindo com create");
         }
@@ -97,9 +97,7 @@ public class ClientUpdaterMiddleware extends UpdaterMiddleware implements IClien
 
     @Override
     public void deleteClient(ID id) throws NotFoundItemInPortalException, RatisClientException, BadRequestException {
-        if (!clientCacheService.hasClient(id.getID())) {
-            retrieveClient(id);
-        }
+        retrieveClient(id);
         try {
             if (!getRatisClientFromID(id.getID()).del(getStorePath(id.getID())).isSuccess()) {
                 throw new NotFoundItemInPortalException();

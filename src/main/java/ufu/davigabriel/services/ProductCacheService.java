@@ -1,6 +1,7 @@
 package ufu.davigabriel.services;
 
 import ufu.davigabriel.exceptions.DuplicatePortalItemException;
+import ufu.davigabriel.exceptions.IllegalVersionPortalItemException;
 import ufu.davigabriel.exceptions.NotFoundItemInPortalException;
 import ufu.davigabriel.models.ClientNative;
 import ufu.davigabriel.models.ProductNative;
@@ -20,7 +21,7 @@ import java.util.HashMap;
  * a database de Admin nao permitira operacoes produtos ou clientes duplicados ou
  * inexistentes.
  */
-public class ProductCacheService implements IProductProxyDatabase {
+public class ProductCacheService extends BaseCacheService implements IProductProxyDatabase {
     private static ProductCacheService instance;
     /*
     O esquema de dados nos Hash Maps abaixo (productsMap e clientsMap) ocorre
@@ -54,8 +55,8 @@ public class ProductCacheService implements IProductProxyDatabase {
     private void createProduct(ProductNative productNative) throws DuplicatePortalItemException {
         if (hasProduct(productNative.getPID()))
             throw new DuplicatePortalItemException();
-
-        productsMap.putIfAbsent(productNative.getPID(), productNative.toJson());
+        this.addToCache(productNative);
+        productsMap.put(productNative.getPID(), productNative.toJson());
     }
 
     public Product retrieveProduct(ID id) throws NotFoundItemInPortalException {
@@ -63,15 +64,17 @@ public class ProductCacheService implements IProductProxyDatabase {
     }
 
     private ProductNative retrieveProduct(String id) throws NotFoundItemInPortalException {
+        this.throwNotFoundItemIfOldOrNotFoundHash(id);
         if (!hasProduct(id)) throw new NotFoundItemInPortalException();
         return ProductNative.fromJson(productsMap.get(id));
     }
 
-    public void updateProduct(Product product) throws NotFoundItemInPortalException {
+    public void updateProduct(Product product) throws NotFoundItemInPortalException, IllegalVersionPortalItemException {
         updateProduct(ProductNative.fromProduct(product));
     }
 
-    private void updateProduct(ProductNative productNative) throws NotFoundItemInPortalException {
+    private void updateProduct(ProductNative productNative) throws NotFoundItemInPortalException, IllegalVersionPortalItemException {
+        throwIfNotUpdatable(productNative);
         if (!hasProduct(productNative.getPID())) throw new NotFoundItemInPortalException();
         productsMap.put(productNative.getPID(), productNative.toJson());
     }
@@ -81,11 +84,12 @@ public class ProductCacheService implements IProductProxyDatabase {
     }
 
     private void deleteProduct(String id) throws NotFoundItemInPortalException {
+        throwNotFoundItemIfOldOrNotFoundHash(id);
         if (!hasProduct(id)) throw new NotFoundItemInPortalException();
         productsMap.remove(id);
     }
 
-    public boolean hasProduct(String id) { return productsMap.containsKey(id); }
+    public boolean hasProduct(String id) { return productsMap.containsKey(id) && !this.isCacheOldOrMissing(id); }
 
     public boolean hasProduct(Product product) { return hasProduct(product.getPID()); }
 }
