@@ -3,10 +3,7 @@ package ufu.davigabriel.services;
 import com.google.gson.JsonSyntaxException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import ufu.davigabriel.exceptions.BadRequestException;
-import ufu.davigabriel.exceptions.DuplicatePortalItemException;
-import ufu.davigabriel.exceptions.NotFoundItemInPortalException;
-import ufu.davigabriel.exceptions.RatisClientException;
+import ufu.davigabriel.exceptions.*;
 import ufu.davigabriel.models.ClientNative;
 import ufu.davigabriel.server.Client;
 import ufu.davigabriel.server.ID;
@@ -35,8 +32,10 @@ public class ClientUpdaterMiddleware extends UpdaterMiddleware implements IClien
 
     @Override
     public void createClient(Client client) throws DuplicatePortalItemException, RatisClientException, BadRequestException {
-        if (clientCacheService.hasClient(client)) {
-            throw new DuplicatePortalItemException("Usuário já existe: " + client.toString());
+        try {
+            Client retrieveClient = retrieveClient(client);
+        } catch (NotFoundItemInPortalException notFoundItemInPortalException) {
+            System.out.println("Não há usuário " + client.getCID() + ", prosseguindo com create");
         }
         try {
             if (!getRatisClientFromID(client.getCID()).add(getClientStorePath(client), ClientNative.fromClient(client).toJson()).isSuccess()) {
@@ -51,10 +50,9 @@ public class ClientUpdaterMiddleware extends UpdaterMiddleware implements IClien
     }
 
     @Override
-    public void updateClient(Client client) throws NotFoundItemInPortalException, RatisClientException, BadRequestException {
-        if (!clientCacheService.hasClient(client)) {
-            retrieveClient(client);
-        }
+    public void updateClient(Client client) throws NotFoundItemInPortalException, RatisClientException, BadRequestException, IllegalVersionPortalItemException {
+        retrieveClient(client);
+        clientCacheService.throwIfNotUpdatable(ClientNative.fromClient(client));
         try {
             if (!getRatisClientFromID(client.getCID()).update(
                     getClientStorePath(client), client.toString()).isSuccess()) {

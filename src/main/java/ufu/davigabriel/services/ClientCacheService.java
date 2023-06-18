@@ -1,13 +1,11 @@
 package ufu.davigabriel.services;
 
 import ufu.davigabriel.exceptions.DuplicatePortalItemException;
+import ufu.davigabriel.exceptions.IllegalVersionPortalItemException;
 import ufu.davigabriel.exceptions.NotFoundItemInPortalException;
 import ufu.davigabriel.models.ClientNative;
-import ufu.davigabriel.models.ProductNative;
 import ufu.davigabriel.server.Client;
 import ufu.davigabriel.server.ID;
-import ufu.davigabriel.server.Product;
-
 import java.util.HashMap;
 
 /**
@@ -20,7 +18,7 @@ import java.util.HashMap;
  * a database de Admin nao permitira operacoes produtos ou clientes duplicados ou
  * inexistentes.
  */
-public class ClientCacheService implements IClientProxyDatabase {
+public class ClientCacheService extends BaseCacheService implements IClientProxyDatabase {
     private static ClientCacheService instance;
     /*
     O esquema de dados nos Hash Maps abaixo (productsMap e clientsMap) ocorre
@@ -54,8 +52,8 @@ public class ClientCacheService implements IClientProxyDatabase {
     private void createClient(ClientNative clientNative) throws DuplicatePortalItemException {
         if (hasClient(clientNative.getCID()))
             throw new DuplicatePortalItemException();
-
-        clientsMap.putIfAbsent(clientNative.getCID(), clientNative.toJson());
+        this.addToCache(clientNative);
+        clientsMap.put(clientNative.getCID(), clientNative.toJson());
     }
 
 
@@ -64,29 +62,36 @@ public class ClientCacheService implements IClientProxyDatabase {
     }
 
     private ClientNative retrieveClient(String id) throws NotFoundItemInPortalException {
+        this.throwNotFoundItemIfOldOrNotFoundHash(id);
         if (!hasClient(id)) throw new NotFoundItemInPortalException();
+
         return ClientNative.fromJson(clientsMap.get(id));
     }
 
-    public void updateClient(Client client) throws NotFoundItemInPortalException {
+    public void updateClient(Client client) throws NotFoundItemInPortalException, IllegalVersionPortalItemException {
         updateClient(ClientNative.fromClient(client));
     }
 
-    private void updateClient(ClientNative clientNative) throws NotFoundItemInPortalException {
+    private void updateClient(ClientNative clientNative) throws NotFoundItemInPortalException, IllegalVersionPortalItemException {
+        throwIfNotUpdatable(clientNative);
         if (!hasClient(clientNative.getCID())) throw new NotFoundItemInPortalException();
         clientsMap.put(clientNative.getCID(), clientNative.toJson());
     }
 
     public void deleteClient(ID id) throws NotFoundItemInPortalException {
-        if (!hasClient(id.getID())) throw new NotFoundItemInPortalException();
         deleteClient(id.getID());
     }
 
     private void deleteClient(String id) throws NotFoundItemInPortalException {
+        throwNotFoundItemIfOldOrNotFoundHash(id);
         if (!hasClient(id)) throw new NotFoundItemInPortalException();
         clientsMap.remove(id);
     }
 
-    public boolean hasClient(String id) { return clientsMap.containsKey(id); }
-    public boolean hasClient(Client client) { return hasClient(client.getCID()); }
+    public boolean hasClient(String id) {
+        return clientsMap.containsKey(id) && !this.isCacheOldOrMissing(id);
+    }
+    public boolean hasClient(Client client) {
+        return hasClient(client.getCID());
+    }
 }

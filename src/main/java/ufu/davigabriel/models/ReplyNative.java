@@ -13,6 +13,7 @@ public enum ReplyNative {
     BAD_REQUEST(400, "Bad request."),
     NAO_LOGADO(401, "Usuario nao existe."),
     INEXISTENTE(404, "Item nao existe."),
+    VERSAO_CONFLITANTE(409, "Versão Conflitante"),
     DUPLICATA(422, "Item ja existe."),
     ERRO_DESCONHECIDO(500, "Falha interna."),
     ERRO_PROTOCOLOS(502, "Erro no servidor Ratis");
