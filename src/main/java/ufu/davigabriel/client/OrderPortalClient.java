@@ -48,7 +48,7 @@ public class OrderPortalClient {
                     " valido entre 1024 e 65535");
         } finally {
             System.out.println("Conectara em: " + TARGET_SERVER);
-        }
+        }I
 
 
         ManagedChannel channel = Grpc.newChannelBuilder(TARGET_SERVER, InsecureChannelCredentials.create()).build();
@@ -232,7 +232,7 @@ public class OrderPortalClient {
         return replyNative;
     }
 
-    private String login(AdminPortalGrpc.AdminPortalBlockingStub blockingStub, Scanner scanner) {
+    private String login(AdminPortalGrpc.AdminPortalBloIckingStub blockingStub, Scanner scanner) {
         System.out.println("Por favor, autentique o cliente antes de prosseguir.");
 
         int attempts = 5;
