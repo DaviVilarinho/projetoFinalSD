@@ -60,6 +60,7 @@ public class BaseStateMachine extends org.apache.ratis.statemachine.impl.BaseSta
                 }
         }
 
+
         @Override
         public CompletableFuture<Message> applyTransaction(TransactionContext trx) {
                 DB db;
@@ -79,7 +80,7 @@ public class BaseStateMachine extends org.apache.ratis.statemachine.impl.BaseSta
                         final RaftProtos.RaftPeerRole role = trx.getServerRole();
                         System.out.printf("TRANSACTION -> %s:%s %s %s=%s\n", role, getId(), opKeyValue[0], opKeyValue[1], opKeyValue[2]);
 
-                        if ("del".equals(opKeyValue[0])) {
+                        if ("del".equals(opKeyValue[0]) || "null".equals(opKeyValue[2])) {
                                 System.out.println("Deletando no LEVELDB " + opKeyValue[1]);
                                 db.delete(opKeyValue[1].getBytes());
                         } else {
