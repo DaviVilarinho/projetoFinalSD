@@ -54,8 +54,11 @@ mvn exec:java -Dexec.mainClass=ufu.davigabriel.server.OrderPortalServer -Dexec.a
 # Execução via .jar
 
     1° - Não é possível executar puramente o sistema através do .jar gerado na 
-    compilação, <terminar>. Embora tenhamos configurado, a configuração normal do GRPC
-    conflita com os plugins de geração de dependência usados na disciplina.
+    compilação, mas para as réplicas é. Ele entrará em execução, mas provavelmente 
+    dará um erro de IOException e abort de requisição GRPC. 
+    Embora tenhamos configurado, a configuração normal do GRPC
+    conflita com os plugins de geração de dependência usados na disciplina como
+    Raft.
 
     Novamente passamos muita dor de cabeça numa exceção de IO (provavelmente interno do JAR pelo 
     debug e pelo site que encontramos dizendo que a Google não suporta tão bem o Maven) e que simplesmente não acontecia rodando
