@@ -1,3 +1,6 @@
+# Video Explicativo do Sistema
+https://youtu.be/0mHUn4WnG-4
+
 # Para executar o sistema:
 
     1° - Em um terminal, executar o comando 'runAllServers.sh'.
@@ -56,10 +59,9 @@ mvn exec:java -Dexec.mainClass=ufu.davigabriel.server.OrderPortalServer -Dexec.a
 
     1° - Não é possível executar puramente o sistema através do .jar gerado na 
     compilação, mas para as réplicas é. Ele entrará em execução, mas provavelmente 
-    dará um erro de IOException e abort de requisição GRPC. 
-    Embora tenhamos configurado, a configuração normal do GRPC
-    conflita com os plugins de geração de dependência usados na disciplina como
-    Raft.
+    dará um erro de IOException e abort de requisição GRPC. Embora tenhamos configurado,
+    a configuração normal do GRPC conflita com os plugins de geração de dependência usados
+    na disciplina como Raft.
 
     Novamente passamos muita dor de cabeça numa exceção de IO (provavelmente interno do JAR pelo 
     debug e pelo site que encontramos dizendo que a Google não suporta tão bem o Maven) e que
@@ -92,7 +94,7 @@ mvn exec:java -Dexec.mainClass=ufu.davigabriel.server.OrderPortalServer -Dexec.a
     3° - Para acessar os testes, referir-se aos arquivos contidos na pasta:
     './src/test/java'. Recomendamos utilizar o Intellij.
 
-# VERSÕES
+# Versões
 
     1° - JAVA 17.0.8
     2° - MAVEN 3.8.7
