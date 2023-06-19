@@ -32,8 +32,9 @@ mvn exec:java -Dexec.mainClass=ufu.davigabriel.server.OrderPortalServer -Dexec.a
     os processos java que estavam em uso, assim como limpa o banco de dados para
     garantir o funcionamento adequado do sistema entre runs.
 
-    Ainda assim é recomendado que veja se o seu intellij (ou aplicações java na sua máquina) está executando só e somente 2 processos.
-    Se for mais, este script pode matá-los, se for menos, algum processo ficará vivo 
+    Ainda assim é recomendado que veja se o seu intellij (ou aplicações java na sua máquina)
+    está executando só e somente 2 processos.
+    Se for mais, este script pode matá-los, se for menos, algum processo ficará vivo.
 
 # Rodar testes automatizados
 
@@ -61,9 +62,9 @@ mvn exec:java -Dexec.mainClass=ufu.davigabriel.server.OrderPortalServer -Dexec.a
     Raft.
 
     Novamente passamos muita dor de cabeça numa exceção de IO (provavelmente interno do JAR pelo 
-    debug e pelo site que encontramos dizendo que a Google não suporta tão bem o Maven) e que simplesmente não acontecia rodando
-    SEM o jar (pelo intellij) e descobrimos o `mvn exec` que resolveu, mas se quiser verificar
-    o que estamos dizendo
+    debug e pelo site que encontramos dizendo que a Google não suporta tão bem o Maven) e que
+    simplesmente não acontecia rodando SEM o jar (pelo intellij) e descobrimos o `mvn exec`
+    que resolveu, mas se quiser verificar o que estamos dizendo.
 
 ## Compilação
 
